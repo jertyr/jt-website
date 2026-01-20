@@ -883,6 +883,7 @@ body.sim-city-mode section {
 }
 
 body.sim-city-mode #projects,
+body.sim-city-mode #instagram,
 body.sim-city-mode #contact {
     border-top: 1px solid #e8e8e8 !important;
     padding-top: 50px !important;
@@ -1219,6 +1220,7 @@ body.sim-city-mode .mode-btn.active::after {
     }
 
     body.sim-city-mode #projects,
+    body.sim-city-mode #instagram,
     body.sim-city-mode #contact {
         padding-top: 35px !important;
     }
@@ -1273,6 +1275,7 @@ body.sim-city-mode .mode-btn.active::after {
     }
 
     body.sim-city-mode #projects,
+    body.sim-city-mode #instagram,
     body.sim-city-mode #contact {
         padding-top: 28px !important;
     }
