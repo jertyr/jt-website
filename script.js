@@ -1,21 +1,9 @@
-// Smooth scroll for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
 // Mode switching functionality
 window.setMode = function(mode) {
     const body = document.body;
     const buttons = document.querySelectorAll('.mode-btn');
+
+    console.log('setMode called with:', mode);
 
     // Remove all mode classes
     body.classList.remove('sim-city-mode', 'ultra-chaos');
@@ -32,7 +20,7 @@ window.setMode = function(mode) {
     switch(mode) {
         case 'normal':
             body.classList.add('sim-city-mode');
-            console.log('Normal mode activated - Classic Sim City 2000 aesthetic');
+            console.log('Normal mode activated - Clean blog style');
             console.log('Body classes:', body.className);
             break;
         case 'nutters':
@@ -43,18 +31,29 @@ window.setMode = function(mode) {
         case 'mayhem':
             body.classList.add('ultra-chaos');
             console.log('🔥🔥🔥 MAYHEM MODE ACTIVATED 🔥🔥🔥');
-            console.log('Warning: Maximum chaos levels detected!');
-            console.log('Everything is spinning and rainbow now!');
-            console.log('Comic Sans has been deployed!');
             console.log('Body classes:', body.className);
             break;
     }
 };
 
-// Set up button event listeners
+// Wait for DOM to be ready before running any code
 document.addEventListener('DOMContentLoaded', function() {
-    const modeButtons = document.querySelectorAll('.mode-btn');
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
 
+    // Set up mode button event listeners
+    const modeButtons = document.querySelectorAll('.mode-btn');
     console.log('Found ' + modeButtons.length + ' mode buttons');
 
     modeButtons.forEach(button => {
