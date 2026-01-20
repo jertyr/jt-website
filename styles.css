@@ -878,15 +878,15 @@ body.sim-city-mode section {
     box-shadow: none !important;
     transform: none !important;
     transition: none !important;
-    padding: 0 0 50px 0 !important;
-    margin: 0 0 50px 0 !important;
+    padding: 0 0 30px 0 !important;
+    margin: 0 0 20px 0 !important;
 }
 
 body.sim-city-mode #projects,
 body.sim-city-mode #instagram,
 body.sim-city-mode #contact {
     border-top: 1px solid #e8e8e8 !important;
-    padding-top: 50px !important;
+    padding-top: 30px !important;
 }
 
 body.sim-city-mode section:last-of-type {
