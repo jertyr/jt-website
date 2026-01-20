@@ -68,4 +68,95 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set initial mode to normal (clean blog style)
     window.setMode('normal');
+
+    // Load Instagram posts
+    loadInstagramPosts();
+});
+
+// Instagram posts loader
+async function loadInstagramPosts() {
+    const instagramGrid = document.querySelector('.instagram-grid');
+    if (!instagramGrid) return;
+
+    const username = 'rem.guide';
+
+    // Show loading state
+    instagramGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #00FF00;">Loading posts...</p>';
+
+    // Try multiple methods to fetch Instagram posts
+    try {
+        // Method 1: Try Instagram's public JSON endpoint
+        let response = await fetch(`https://www.instagram.com/${username}/?__a=1&__d=dis`);
+
+        if (!response.ok) {
+            // Method 2: Try the web profile info endpoint
+            response = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`, {
+                headers: {
+                    'x-ig-app-id': '936619743392459'
+                }
+            });
+        }
+
+        if (response.ok) {
+            const data = await response.json();
+            let posts = null;
+
+            // Parse different response formats
+            if (data.graphql?.user?.edge_owner_to_timeline_media) {
+                posts = data.graphql.user.edge_owner_to_timeline_media.edges;
+            } else if (data.data?.user?.edge_owner_to_timeline_media) {
+                posts = data.data.user.edge_owner_to_timeline_media.edges;
+            }
+
+            if (posts && posts.length > 0) {
+                instagramGrid.innerHTML = ''; // Clear loading message
+                posts.slice(0, 9).forEach(post => {
+                    const node = post.node;
+                    const postUrl = `https://www.instagram.com/p/${node.shortcode}/`;
+                    const thumbnailUrl = node.thumbnail_src || node.display_url;
+
+                    const postElement = document.createElement('a');
+                    postElement.href = postUrl;
+                    postElement.target = '_blank';
+                    postElement.className = 'instagram-post';
+                    postElement.innerHTML = `<img src="${thumbnailUrl}" alt="Instagram post" loading="lazy">`;
+
+                    instagramGrid.appendChild(postElement);
+                });
+                return;
+            }
+        }
+
+        throw new Error('Failed to fetch Instagram posts');
+    } catch (error) {
+        console.log('Instagram API not accessible:', error);
+        loadFallbackPosts();
+    }
+}
+
+function loadFallbackPosts() {
+    // Fallback: manually specified post shortcodes
+    // Update these with your actual Instagram post shortcodes
+    const postShortcodes = [
+        // Add your Instagram post shortcodes here
+        // Example: 'C1234567890'
+    ];
+
+    const instagramGrid = document.querySelector('.instagram-grid');
+
+    if (postShortcodes.length === 0) {
+        instagramGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #00FF00;">Instagram posts coming soon...</p>';
+        return;
+    }
+
+    postShortcodes.forEach(shortcode => {
+        const postUrl = `https://www.instagram.com/p/${shortcode}/`;
+        const postElement = document.createElement('a');
+        postElement.href = postUrl;
+        postElement.target = '_blank';
+        postElement.className = 'instagram-post';
+        postElement.innerHTML = `<img src="https://www.instagram.com/p/${shortcode}/media/?size=m" alt="Instagram post" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22><rect fill=%22%23f0f0f0%22 width=%22400%22 height=%22400%22/><text x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-family=%22sans-serif%22>📷</text></svg>'">`;
+
+        instagramGrid.appendChild(postElement);
+    });
 });
