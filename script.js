@@ -136,10 +136,16 @@ async function loadInstagramPosts() {
 
 function loadFallbackPosts() {
     // Fallback: manually specified post shortcodes
-    // Update these with your actual Instagram post shortcodes
     const postShortcodes = [
-        // Add your Instagram post shortcodes here
-        // Example: 'C1234567890'
+        'DTtexVCD3Ai',
+        'DTtaTuvD8E_',
+        'DTol_-rDmRY',
+        'DTolioFCadH',
+        'DToB3i2iS5V',
+        'DToBkJTicI9',
+        'DToBUPGCSO6',
+        'DToBN_qib2o',
+        'DToBAWQiXuC'
     ];
 
     const instagramGrid = document.querySelector('.instagram-grid');
