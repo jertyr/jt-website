@@ -1,21 +1,9 @@
-// Smooth scroll for anchor links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
 // Mode switching functionality
 window.setMode = function(mode) {
     const body = document.body;
     const buttons = document.querySelectorAll('.mode-btn');
+
+    console.log('setMode called with:', mode);
 
     // Remove all mode classes
     body.classList.remove('sim-city-mode', 'ultra-chaos');
@@ -32,7 +20,7 @@ window.setMode = function(mode) {
     switch(mode) {
         case 'normal':
             body.classList.add('sim-city-mode');
-            console.log('Normal mode activated - Classic Sim City 2000 aesthetic');
+            console.log('Normal mode activated - Clean blog style');
             console.log('Body classes:', body.className);
             break;
         case 'nutters':
@@ -43,18 +31,29 @@ window.setMode = function(mode) {
         case 'mayhem':
             body.classList.add('ultra-chaos');
             console.log('🔥🔥🔥 MAYHEM MODE ACTIVATED 🔥🔥🔥');
-            console.log('Warning: Maximum chaos levels detected!');
-            console.log('Everything is spinning and rainbow now!');
-            console.log('Comic Sans has been deployed!');
             console.log('Body classes:', body.className);
             break;
     }
 };
 
-// Set up button event listeners
+// Wait for DOM to be ready before running any code
 document.addEventListener('DOMContentLoaded', function() {
-    const modeButtons = document.querySelectorAll('.mode-btn');
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
 
+    // Set up mode button event listeners
+    const modeButtons = document.querySelectorAll('.mode-btn');
     console.log('Found ' + modeButtons.length + ' mode buttons');
 
     modeButtons.forEach(button => {
@@ -78,90 +77,38 @@ async function loadInstagramPosts() {
     const instagramGrid = document.querySelector('.instagram-grid');
     if (!instagramGrid) return;
 
-    const username = 'rem.guide';
-
     // Show loading state
     instagramGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #00FF00;">Loading posts...</p>';
 
-    // Try multiple methods to fetch Instagram posts
-    try {
-        // Method 1: Try Instagram's public JSON endpoint
-        let response = await fetch(`https://www.instagram.com/${username}/?__a=1&__d=dis`);
-
-        if (!response.ok) {
-            // Method 2: Try the web profile info endpoint
-            response = await fetch(`https://www.instagram.com/api/v1/users/web_profile_info/?username=${username}`, {
-                headers: {
-                    'x-ig-app-id': '936619743392459'
-                }
-            });
-        }
-
-        if (response.ok) {
-            const data = await response.json();
-            let posts = null;
-
-            // Parse different response formats
-            if (data.graphql?.user?.edge_owner_to_timeline_media) {
-                posts = data.graphql.user.edge_owner_to_timeline_media.edges;
-            } else if (data.data?.user?.edge_owner_to_timeline_media) {
-                posts = data.data.user.edge_owner_to_timeline_media.edges;
-            }
-
-            if (posts && posts.length > 0) {
-                instagramGrid.innerHTML = ''; // Clear loading message
-                posts.slice(0, 9).forEach(post => {
-                    const node = post.node;
-                    const postUrl = `https://www.instagram.com/p/${node.shortcode}/`;
-                    const thumbnailUrl = node.thumbnail_src || node.display_url;
-
-                    const postElement = document.createElement('a');
-                    postElement.href = postUrl;
-                    postElement.target = '_blank';
-                    postElement.className = 'instagram-post';
-                    postElement.innerHTML = `<img src="${thumbnailUrl}" alt="Instagram post" loading="lazy">`;
-
-                    instagramGrid.appendChild(postElement);
-                });
-                return;
-            }
-        }
-
-        throw new Error('Failed to fetch Instagram posts');
-    } catch (error) {
-        console.log('Instagram API not accessible:', error);
-        loadFallbackPosts();
-    }
+    // Directly load fallback posts with thumbnails
+    loadFallbackPosts();
 }
 
-function loadFallbackPosts() {
-    // Fallback: manually specified post shortcodes
-    const postShortcodes = [
-        'DTtexVCD3Ai',
-        'DTtaTuvD8E_',
-        'DTol_-rDmRY',
-        'DTolioFCadH',
-        'DToB3i2iS5V',
-        'DToBkJTicI9',
-        'DToBUPGCSO6',
-        'DToBN_qib2o',
-        'DToBAWQiXuC'
+async function loadFallbackPosts() {
+    const posts = [
+        { shortcode: 'DTtexVCD3Ai', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479457697_1104845667995172_2875673467815253888_n.jpg' },
+        { shortcode: 'DTtaTuvD8E_', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479455913_551776831137562_3374619054467091166_n.jpg' },
+        { shortcode: 'DTol_-rDmRY', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479396882_1106993624456949_4695883395775848974_n.jpg' },
+        { shortcode: 'DTolioFCadH', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479486530_1293857121632453_1293932736668738882_n.jpg' },
+        { shortcode: 'DToB3i2iS5V', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479371551_1100849398325952_2894639889990736606_n.jpg' },
+        { shortcode: 'DToBkJTicI9', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479372348_1292894218393802_6034914046664878968_n.jpg' },
+        { shortcode: 'DToBUPGCSO6', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479323815_933026622223927_7815806896577858716_n.jpg' },
+        { shortcode: 'DToBN_qib2o', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479327316_609853804969093_7903866936513698026_n.jpg' },
+        { shortcode: 'DToBAWQiXuC', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479370424_1106669427779764_8699992726858704302_n.jpg' }
     ];
 
     const instagramGrid = document.querySelector('.instagram-grid');
+    instagramGrid.innerHTML = ''; // Clear loading message
 
-    if (postShortcodes.length === 0) {
-        instagramGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #00FF00;">Instagram posts coming soon...</p>';
-        return;
-    }
-
-    postShortcodes.forEach(shortcode => {
-        const postUrl = `https://www.instagram.com/p/${shortcode}/`;
+    posts.forEach(post => {
+        const postUrl = `https://www.instagram.com/p/${post.shortcode}/`;
         const postElement = document.createElement('a');
         postElement.href = postUrl;
         postElement.target = '_blank';
         postElement.className = 'instagram-post';
-        postElement.innerHTML = `<img src="https://www.instagram.com/p/${shortcode}/media/?size=m" alt="Instagram post" loading="lazy" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22400%22><rect fill=%22%23f0f0f0%22 width=%22400%22 height=%22400%22/><text x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-family=%22sans-serif%22>📷</text></svg>'">`;
+
+        // Use actual Instagram CDN URL with fallback
+        postElement.innerHTML = `<img src="${post.img}" alt="Instagram post" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%); display: flex; align-items: center; justify-content: center; color: #FF00FF; font-size: 48px;\\'>📷</div>';">`;
 
         instagramGrid.appendChild(postElement);
     });
