@@ -165,4 +165,4 @@ function loadFallbackPosts() {
 
         instagramGrid.appendChild(postElement);
     });
-});
+}
