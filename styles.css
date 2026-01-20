@@ -459,6 +459,66 @@ a:hover {
     box-shadow: 0 0 10px #FFFF00;
 }
 
+/* Instagram Section */
+#instagram {
+    padding: 20px;
+}
+
+.instagram-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.instagram-post {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 2px solid #00FF00;
+    transition: all 0.3s;
+    background: linear-gradient(135deg, rgba(0, 255, 255, 0.05) 0%, rgba(255, 0, 255, 0.05) 100%);
+}
+
+.instagram-post:hover {
+    border-color: #FF00FF;
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+    z-index: 10;
+}
+
+.instagram-post img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: all 0.3s;
+}
+
+.instagram-post:hover img {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.instagram-post::before {
+    content: "▶";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #FF00FF;
+    font-size: 40px;
+    opacity: 0;
+    transition: all 0.3s;
+    text-shadow: 0 0 10px #FF00FF;
+    z-index: 2;
+    animation: constructionBlink 1s infinite;
+}
+
+.instagram-post:hover::before {
+    opacity: 1;
+}
+
 /* Projects */
 #projects {
     padding: 20px;
@@ -823,6 +883,7 @@ body.sim-city-mode section {
 }
 
 body.sim-city-mode #projects,
+body.sim-city-mode #instagram,
 body.sim-city-mode #contact {
     border-top: 1px solid #e8e8e8 !important;
     padding-top: 50px !important;
@@ -970,6 +1031,33 @@ body.sim-city-mode .read-more:hover {
     background-color: transparent !important;
     border-bottom: 2px solid #000 !important;
     box-shadow: none !important;
+}
+
+body.sim-city-mode #instagram {
+    padding: 0 !important;
+}
+
+body.sim-city-mode .instagram-grid {
+    gap: 8px !important;
+}
+
+body.sim-city-mode .instagram-post {
+    border: 1px solid #e8e8e8 !important;
+    background: transparent !important;
+}
+
+body.sim-city-mode .instagram-post:hover {
+    border-color: #ccc !important;
+    transform: scale(1.02) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.sim-city-mode .instagram-post:hover img {
+    opacity: 0.9 !important;
+}
+
+body.sim-city-mode .instagram-post::before {
+    display: none !important;
 }
 
 body.sim-city-mode .project {
@@ -1132,6 +1220,7 @@ body.sim-city-mode .mode-btn.active::after {
     }
 
     body.sim-city-mode #projects,
+    body.sim-city-mode #instagram,
     body.sim-city-mode #contact {
         padding-top: 35px !important;
     }
@@ -1186,6 +1275,7 @@ body.sim-city-mode .mode-btn.active::after {
     }
 
     body.sim-city-mode #projects,
+    body.sim-city-mode #instagram,
     body.sim-city-mode #contact {
         padding-top: 28px !important;
     }
@@ -1320,6 +1410,27 @@ body.ultra-chaos .post-tile::before {
     font-size: 40px !important;
 }
 
+body.ultra-chaos .instagram-post {
+    animation: ultraShake 0.3s infinite, spin 3s linear infinite;
+    border: 4px solid;
+    border-image: linear-gradient(45deg, #FF0000, #FF00FF, #0000FF, #00FFFF, #00FF00, #FFFF00, #FF0000) 1;
+}
+
+body.ultra-chaos .instagram-post:hover {
+    animation: ultraShake 0.1s infinite, spin 1s linear infinite, pulse 0.3s infinite;
+}
+
+body.ultra-chaos .instagram-post img {
+    animation: rainbowText 1s infinite;
+}
+
+body.ultra-chaos .instagram-post::before {
+    content: "🔥";
+    opacity: 1 !important;
+    font-size: 60px !important;
+    animation: spin 0.3s linear infinite, pulse 0.5s infinite;
+}
+
 body.ultra-chaos .project {
     animation: ultraShake 0.3s infinite, spin 5s linear infinite;
 }
@@ -1428,6 +1539,14 @@ body.ultra-chaos .intro {
     .post-tile::before {
         left: -15px;
         font-size: 16px;
+    }
+
+    .instagram-grid {
+        gap: 8px;
+    }
+
+    .instagram-post::before {
+        font-size: 30px;
     }
 
     .project {
