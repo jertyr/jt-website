@@ -67,49 +67,4 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Set initial mode to normal (clean blog style)
     window.setMode('normal');
-
-    // Load Instagram posts
-    loadInstagramPosts();
 });
-
-// Instagram posts loader
-async function loadInstagramPosts() {
-    const instagramGrid = document.querySelector('.instagram-grid');
-    if (!instagramGrid) return;
-
-    // Show loading state
-    instagramGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #00FF00;">Loading posts...</p>';
-
-    // Directly load fallback posts with thumbnails
-    loadFallbackPosts();
-}
-
-async function loadFallbackPosts() {
-    const posts = [
-        { shortcode: 'DTtexVCD3Ai', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479457697_1104845667995172_2875673467815253888_n.jpg' },
-        { shortcode: 'DTtaTuvD8E_', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479455913_551776831137562_3374619054467091166_n.jpg' },
-        { shortcode: 'DTol_-rDmRY', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479396882_1106993624456949_4695883395775848974_n.jpg' },
-        { shortcode: 'DTolioFCadH', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479486530_1293857121632453_1293932736668738882_n.jpg' },
-        { shortcode: 'DToB3i2iS5V', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479371551_1100849398325952_2894639889990736606_n.jpg' },
-        { shortcode: 'DToBkJTicI9', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479372348_1292894218393802_6034914046664878968_n.jpg' },
-        { shortcode: 'DToBUPGCSO6', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479323815_933026622223927_7815806896577858716_n.jpg' },
-        { shortcode: 'DToBN_qib2o', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479327316_609853804969093_7903866936513698026_n.jpg' },
-        { shortcode: 'DToBAWQiXuC', img: 'https://scontent.cdninstagram.com/v/t51.29350-15/479370424_1106669427779764_8699992726858704302_n.jpg' }
-    ];
-
-    const instagramGrid = document.querySelector('.instagram-grid');
-    instagramGrid.innerHTML = ''; // Clear loading message
-
-    posts.forEach(post => {
-        const postUrl = `https://www.instagram.com/p/${post.shortcode}/`;
-        const postElement = document.createElement('a');
-        postElement.href = postUrl;
-        postElement.target = '_blank';
-        postElement.className = 'instagram-post';
-
-        // Use actual Instagram CDN URL with fallback
-        postElement.innerHTML = `<img src="${post.img}" alt="Instagram post" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\'width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%); display: flex; align-items: center; justify-content: center; color: #FF00FF; font-size: 48px;\\'>📷</div>';">`;
-
-        instagramGrid.appendChild(postElement);
-    });
-}
