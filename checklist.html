@@ -108,6 +108,15 @@
   .del { color: var(--muted); background: transparent; border: none; cursor: pointer; font-size: 16px; padding: 2px 6px; }
   .del:hover { color: var(--red); }
 
+  #archive { margin-top: 22px; }
+  #archive details { border-top: 1px solid var(--line); padding-top: 12px; }
+  #archive summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; list-style: none; user-select: none; padding: 4px 0; }
+  #archive summary::-webkit-details-marker { display: none; }
+  #archive summary::before { content: "▸ "; }
+  #archive details[open] summary::before { content: "▾ "; }
+  #archive summary:hover { color: var(--text); }
+  #archive ul.items { margin-top: 10px; }
+
   .footer-note { margin-top: 26px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
   .footer-note code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
 
@@ -149,7 +158,6 @@
       <option value="title">Title</option>
     </select>
     <input type="text" id="search" placeholder="Filter…">
-    <label class="stats"><input type="checkbox" id="hideDone"> hide done</label>
     <span class="spacer"></span>
     <button class="secondary" id="exportBtn">Copy JSON for Claude</button>
     <button class="ghost" id="reloadBtn" title="Discard local changes and reload from repo">Reload from repo</button>
@@ -163,6 +171,7 @@
   </div>
 
   <div id="list"></div>
+  <div id="archive"></div>
 
   <p class="footer-note">
     Changes are saved in <strong>this browser only</strong>. To sync across devices, click
@@ -215,6 +224,7 @@ function showApp() { gate.style.display = "none"; app.style.display = "block"; i
 /* ========================== Data layer ========================== */
 let state = { items: [] };
 const editing = new Set(); // ids currently in edit mode
+let archiveOpen = false;   // remember archive expand/collapse across renders
 
 async function init() {
   const saved = localStorage.getItem(LS_KEY);
@@ -269,7 +279,6 @@ function bindControls() {
   document.getElementById("groupBy").addEventListener("change", render);
   document.getElementById("sortBy").addEventListener("change", render);
   document.getElementById("search").addEventListener("input", render);
-  document.getElementById("hideDone").addEventListener("change", render);
   document.getElementById("reloadBtn").addEventListener("click", async (e) => {
     if (!confirm("Discard local changes and reload from the committed checklist.json?")) return;
     const btn = e.currentTarget;
@@ -315,7 +324,11 @@ function addItem() {
 
 function toggle(id) {
   const it = state.items.find(i => i.id === id);
-  if (it) { it.done = !it.done; save(); render(); }
+  if (it) {
+    it.done = !it.done;
+    it.completed = it.done ? new Date().toISOString().slice(0,10) : "";
+    save(); render();
+  }
 }
 function del(id) {
   state.items = state.items.filter(i => i.id !== id);
@@ -336,36 +349,65 @@ function render() {
   const groupBy = document.getElementById("groupBy").value;
   const sortBy  = document.getElementById("sortBy").value;
   const q = document.getElementById("search").value.toLowerCase();
-  const hideDone = document.getElementById("hideDone").checked;
 
-  let items = state.items.filter(i =>
-    (!hideDone || !i.done) &&
-    (!q || (i.title + " " + (i.job||"")).toLowerCase().includes(q))
-  );
+  const matches = i => !q || (i.title + " " + (i.job||"")).toLowerCase().includes(q);
+  const active   = state.items.filter(i => !i.done && matches(i));
+  const archived = state.items.filter(i =>  i.done && matches(i));
 
   const sorters = {
     due: (a,b) => (parseDate(a.due)?.getTime() ?? Infinity) - (parseDate(b.due)?.getTime() ?? Infinity),
     created: (a,b) => (parseDate(a.created)?.getTime() ?? 0) - (parseDate(b.created)?.getTime() ?? 0),
     title: (a,b) => a.title.localeCompare(b.title)
   };
-  items.sort(sorters[sortBy]);
+  active.sort(sorters[sortBy]);
+  // Archive: most recently completed first, then by due
+  archived.sort((a,b) =>
+    (parseDate(b.completed)?.getTime() ?? 0) - (parseDate(a.completed)?.getTime() ?? 0)
+    || sorters[sortBy](a,b)
+  );
 
   // stats
   const total = state.items.length, done = state.items.filter(i=>i.done).length;
   document.getElementById("stats").textContent = `${done}/${total} done`;
 
+  // ----- Active list -----
   list.innerHTML = "";
-  if (groupBy === "job") {
+  if (active.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "group-h";
+    empty.textContent = q ? "No active items match your filter." : "🎉 No active items — all clear!";
+    list.appendChild(empty);
+  } else if (groupBy === "job") {
     const groups = {};
-    items.forEach(i => { const k = i.job || "—"; (groups[k] = groups[k] || []).push(i); });
+    active.forEach(i => { const k = i.job || "—"; (groups[k] = groups[k] || []).push(i); });
     Object.keys(groups).sort().forEach(k => {
       const h = document.createElement("div"); h.className = "group-h"; h.textContent = k;
       list.appendChild(h);
       list.appendChild(renderList(groups[k]));
     });
   } else {
-    list.appendChild(renderList(items));
+    list.appendChild(renderList(active));
   }
+
+  // ----- Archive (collapsible) -----
+  renderArchive(archived);
+}
+
+function renderArchive(archived) {
+  const wrap = document.getElementById("archive");
+  wrap.innerHTML = "";
+  if (archived.length === 0) return;
+
+  const details = document.createElement("details");
+  details.open = archiveOpen;
+  details.addEventListener("toggle", () => { archiveOpen = details.open; });
+
+  const summary = document.createElement("summary");
+  summary.textContent = `Archive — completed (${archived.length})`;
+  details.appendChild(summary);
+
+  details.appendChild(renderList(archived));
+  wrap.appendChild(details);
 }
 
 function renderList(items) {
@@ -397,7 +439,8 @@ function renderItem(i) {
   if (i.job)   meta.appendChild(tag("job", i.job));
   if (i.due)   meta.appendChild(tag("due " + dueClass(i.due), "due " + i.due));
   if (i.recur) meta.appendChild(tag("recur", "↻ " + i.recur));
-  if (i.created) meta.appendChild(tag("created", "added " + i.created));
+  if (i.done && i.completed) meta.appendChild(tag("created", "done " + i.completed));
+  else if (i.created) meta.appendChild(tag("created", "added " + i.created));
   body.appendChild(meta);
 
   const actions = document.createElement("div"); actions.className = "row-actions";
