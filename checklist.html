@@ -219,23 +219,21 @@ const editing = new Set(); // ids currently in edit mode
 async function init() {
   const saved = localStorage.getItem(LS_KEY);
   if (saved) {
-    try { state = JSON.parse(saved); } catch { await loadFromRepo(); }
+    try { state = JSON.parse(saved); } catch { try { await loadFromRepo(); } catch {} }
   } else {
-    await loadFromRepo();
+    try { await loadFromRepo(); } catch { state = { items: [] }; }
   }
   bindControls();
   render();
 }
 
 async function loadFromRepo() {
-  try {
-    const res = await fetch("checklist.json?ts=" + Date.now());
-    const data = await res.json();
-    state = { items: data.items || [] };
-  } catch (e) {
-    state = { items: [] };
-  }
+  const res = await fetch("checklist.json?ts=" + Date.now(), { cache: "no-store" });
+  if (!res.ok) throw new Error("HTTP " + res.status + " fetching checklist.json");
+  const data = await res.json();
+  state = { items: data.items || [] };
   save();
+  return state.items.length;
 }
 
 function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
@@ -272,10 +270,23 @@ function bindControls() {
   document.getElementById("sortBy").addEventListener("change", render);
   document.getElementById("search").addEventListener("input", render);
   document.getElementById("hideDone").addEventListener("change", render);
-  document.getElementById("reloadBtn").addEventListener("click", async () => {
-    if (confirm("Discard local changes and reload from the committed checklist.json?")) {
-      localStorage.removeItem(LS_KEY); await loadFromRepo(); render();
+  document.getElementById("reloadBtn").addEventListener("click", async (e) => {
+    if (!confirm("Discard local changes and reload from the committed checklist.json?")) return;
+    const btn = e.currentTarget;
+    const label = btn.textContent;
+    btn.textContent = "Loading…";
+    try {
+      localStorage.removeItem(LS_KEY);
+      const n = await loadFromRepo();
+      editing.clear();
+      render();
+      btn.textContent = "Loaded " + n + " ✓";
+    } catch (err) {
+      btn.textContent = label;
+      alert("Could not reload from repo:\n" + err.message +
+            "\n\nIf you just merged a change, GitHub Pages can take 1–2 minutes to publish it. Wait a moment and try again.");
     }
+    setTimeout(() => { btn.textContent = label; }, 2000);
   });
   document.getElementById("exportBtn").addEventListener("click", openExport);
   document.getElementById("closeDlg").addEventListener("click", () => document.getElementById("exportDlg").close());
