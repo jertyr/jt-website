@@ -73,6 +73,16 @@
   .add input { padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 14px; }
   @media (max-width: 640px) { .add { grid-template-columns: 1fr 1fr; } .add input.title { grid-column: 1 / -1; } }
 
+  /* ---- Inline edit form ---- */
+  li.item.editing { display: block; border-color: var(--accent); }
+  .edit-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .edit-field { display: flex; flex-direction: column; gap: 4px; }
+  .edit-field span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .edit-field input { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 14px; }
+  .edit-field:first-child { grid-column: 1 / -1; }
+  .edit-btns { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; margin-top: 2px; }
+  @media (max-width: 640px) { .edit-form { grid-template-columns: 1fr; } }
+
   /* ---- Group + items ---- */
   .group-h { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; margin: 18px 0 8px; }
   ul.items { list-style: none; margin: 0; padding: 0; }
@@ -204,6 +214,7 @@ function showApp() { gate.style.display = "none"; app.style.display = "block"; i
 
 /* ========================== Data layer ========================== */
 let state = { items: [] };
+const editing = new Set(); // ids currently in edit mode
 
 async function init() {
   const saved = localStorage.getItem(LS_KEY);
@@ -303,6 +314,10 @@ function editTitle(id, text) {
   const it = state.items.find(i => i.id === id);
   if (it) { it.title = text; save(); }
 }
+function updateItem(id, fields) {
+  const it = state.items.find(i => i.id === id);
+  if (it) { Object.assign(it, fields); save(); }
+}
 
 /* ========================== Render ========================== */
 function render() {
@@ -349,6 +364,8 @@ function renderList(items) {
 }
 
 function renderItem(i) {
+  if (editing.has(i.id)) return renderEditItem(i);
+
   const li = document.createElement("li");
   li.className = "item" + (i.done ? " done" : "");
 
@@ -359,7 +376,7 @@ function renderItem(i) {
   const body = document.createElement("div"); body.className = "body";
   const t = document.createElement("div");
   t.className = "title-text"; t.textContent = i.title;
-  t.title = "Double-click to edit";
+  t.title = "Double-click to edit title (or use ✎ to edit all fields)";
   t.addEventListener("dblclick", () => { t.contentEditable = "true"; t.focus(); });
   t.addEventListener("blur", () => { t.contentEditable = "false"; editTitle(i.id, t.textContent.trim()); });
   t.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); t.blur(); } });
@@ -373,12 +390,56 @@ function renderItem(i) {
   body.appendChild(meta);
 
   const actions = document.createElement("div"); actions.className = "row-actions";
+  const e = document.createElement("button"); e.className = "del"; e.textContent = "✎"; e.title = "Edit";
+  e.addEventListener("click", () => { editing.add(i.id); render(); });
   const d = document.createElement("button"); d.className = "del"; d.textContent = "✕"; d.title = "Delete";
   d.addEventListener("click", () => { if (confirm("Delete this item?")) del(i.id); });
-  actions.appendChild(d);
+  actions.append(e, d);
 
   li.append(cb, body, actions);
   return li;
+}
+
+function renderEditItem(i) {
+  const li = document.createElement("li");
+  li.className = "item editing";
+
+  const form = document.createElement("div"); form.className = "edit-form";
+  const title = mkField("Title", i.title, "title");
+  const job   = mkField("Job", i.job || "", "job");
+  const due   = mkField("Due (YYYY-MM-DD)", i.due || "", "due");
+  const recur = mkField("Recur", i.recur || "", "recur");
+  form.append(title.wrap, job.wrap, due.wrap, recur.wrap);
+
+  const btns = document.createElement("div"); btns.className = "edit-btns";
+  const saveB = document.createElement("button"); saveB.textContent = "Save";
+  const cancelB = document.createElement("button"); cancelB.className = "secondary"; cancelB.textContent = "Cancel";
+  const commit = () => {
+    const t = title.input.value.trim();
+    if (!t) { title.input.focus(); return; }
+    updateItem(i.id, { title: t, job: job.input.value.trim(), due: due.input.value.trim(), recur: recur.input.value.trim() });
+    editing.delete(i.id); render();
+  };
+  saveB.addEventListener("click", commit);
+  cancelB.addEventListener("click", () => { editing.delete(i.id); render(); });
+  form.addEventListener("keydown", ev => {
+    if (ev.key === "Enter") { ev.preventDefault(); commit(); }
+    else if (ev.key === "Escape") { editing.delete(i.id); render(); }
+  });
+  btns.append(saveB, cancelB);
+  form.appendChild(btns);
+
+  li.appendChild(form);
+  setTimeout(() => title.input.focus(), 0);
+  return li;
+}
+
+function mkField(label, value, name) {
+  const wrap = document.createElement("label"); wrap.className = "edit-field";
+  const span = document.createElement("span"); span.textContent = label;
+  const input = document.createElement("input"); input.type = "text"; input.value = value; input.dataset.name = name;
+  wrap.append(span, input);
+  return { wrap, input };
 }
 
 function tag(cls, text) {
