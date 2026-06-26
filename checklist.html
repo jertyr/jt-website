@@ -57,6 +57,10 @@
   header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   header.top h1 { font-size: 22px; margin: 0; }
   .stats { color: var(--muted); font-size: 13px; }
+  .sync { margin-left: 10px; font-size: 12px; }
+  .sync.ok { color: var(--green); }
+  .sync.err { color: var(--red); }
+  .sync.muted { color: var(--muted); }
 
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
   .toolbar select, .toolbar input[type=text] {
@@ -143,7 +147,10 @@
 <div class="wrap" id="app" style="display:none">
   <header class="top">
     <h1>Checklist</h1>
-    <div class="stats" id="stats"></div>
+    <div class="stats">
+      <span id="stats"></span>
+      <span id="sync" class="sync"></span>
+    </div>
   </header>
 
   <div class="toolbar">
@@ -201,6 +208,16 @@ const USER = "admin";
 const PASS = "pass";
 const LS_KEY = "jt_checklist_v1";
 
+/* =========================================================================
+   CLOUD SYNC (Flavor B) — OFF until WORKER_URL is set.
+   While WORKER_URL is "", the page behaves exactly as before: edits are
+   saved to this browser only and you sync via "Copy JSON for Claude".
+   After deploying the Cloudflare Worker (see SETUP-checklist-sync.md),
+   paste its URL below and every change auto-saves to the repo, no PR needed.
+   ========================================================================= */
+const WORKER_URL = ""; // e.g. "https://checklist-sync.yourname.workers.dev"
+const CLOUD_TOKEN_KEY = "jt_cloud_token";
+
 const gate = document.getElementById("gate");
 const app  = document.getElementById("app");
 
@@ -247,7 +264,70 @@ async function loadFromRepo() {
   return state.items.length;
 }
 
-function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function save() {
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+  if (cloud.enabled()) queueSync();
+}
+
+/* ===================== Cloud sync (Flavor B) ===================== */
+const cloud = {
+  enabled: () => !!WORKER_URL,
+  token: () => localStorage.getItem(CLOUD_TOKEN_KEY) || "",
+  setToken: t => localStorage.setItem(CLOUD_TOKEN_KEY, t),
+  clearToken: () => localStorage.removeItem(CLOUD_TOKEN_KEY),
+  async push() {
+    let token = cloud.token();
+    if (!token) {
+      token = prompt("Cloud sync password (set once on this device):");
+      if (!token) return { ok: false, reason: "no-password" };
+      cloud.setToken(token);
+    }
+    const payload = { updated: new Date().toISOString().slice(0,10), items: state.items };
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, data: payload })
+    });
+    if (res.status === 401) { cloud.clearToken(); return { ok: false, reason: "bad-password" }; }
+    if (!res.ok) return { ok: false, reason: "HTTP " + res.status };
+    return { ok: true };
+  }
+};
+
+let syncTimer = null;
+function queueSync() {
+  setSyncStatus("pending");
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(runSync, 1200); // debounce bursts of edits
+}
+async function runSync() {
+  setSyncStatus("saving");
+  try {
+    const r = await cloud.push();
+    if (r.ok) setSyncStatus("saved");
+    else if (r.reason === "bad-password") setSyncStatus("error", "auth failed — click to retry");
+    else if (r.reason === "no-password") setSyncStatus("idle");
+    else setSyncStatus("error", "not saved (" + r.reason + ") — click to retry");
+  } catch (e) {
+    setSyncStatus("error", "offline — saved locally, click to retry");
+  }
+}
+function setSyncStatus(kind, msg) {
+  const el = document.getElementById("sync");
+  if (!el || !cloud.enabled()) return;
+  const map = {
+    pending: ["• syncing…", "muted"],
+    saving:  ["• saving…", "muted"],
+    saved:   ["✓ saved to cloud", "ok"],
+    error:   ["⚠ " + (msg || "sync error"), "err"],
+    idle:    ["", "muted"]
+  };
+  const [text, cls] = map[kind] || ["", "muted"];
+  el.textContent = text;
+  el.className = "sync " + cls;
+  el.onclick = (kind === "error") ? runSync : null;
+  el.style.cursor = (kind === "error") ? "pointer" : "default";
+}
 
 function nextId() { return state.items.reduce((m, i) => Math.max(m, i.id || 0), 0) + 1; }
 
