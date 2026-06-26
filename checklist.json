@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-21",
+  "updated": "2026-06-26",
   "note": "Canonical checklist data. Claude Code reads/edits this file directly. The web page (checklist.html) loads it as the seed; in-browser edits are kept in the browser's localStorage. Use the page's 'Copy JSON for Claude' button to hand changes back so they can be committed here and synced across devices.",
   "items": [
     { "id": 1,  "done": false, "title": "Get Henry the Home Care information", "job": "", "due": "2026-05-19", "created": "2026-05-18", "recur": "" },
@@ -30,6 +30,12 @@
     { "id": 26, "done": false, "title": "Do pestie", "job": "Personal", "due": "2026-04-30", "created": "2026-04-26", "recur": "" },
     { "id": 31, "done": false, "title": "Check siding and confirm grouting plan", "job": "Behn", "due": "2026-04-29", "created": "2026-04-28", "recur": "" },
     { "id": 33, "done": false, "title": "Template and order countertop", "job": "AXO", "due": "2026-05-27", "created": "2026-05-27", "recur": "" },
-    { "id": 34, "done": false, "title": "Check in with Beth about screen (critter prevention under bump out)", "job": "AXO", "due": "2026-06-03", "created": "2026-05-27", "recur": "" }
+    { "id": 34, "done": false, "title": "Check in with Beth about screen (critter prevention under bump out)", "job": "AXO", "due": "2026-06-03", "created": "2026-05-27", "recur": "" },
+    { "id": 35, "done": false, "title": "Put time off requests in for Dusty Paul and someone else", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 36, "done": false, "title": "Maletic electrical and floorboard", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 37, "done": false, "title": "Kasper gutters", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 38, "done": false, "title": "Order safety equipment", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 39, "done": false, "title": "Job details for brian", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 40, "done": false, "title": "Review information for Justin", "job": "", "due": "", "created": "2026-06-26", "recur": "" }
   ]
 }
