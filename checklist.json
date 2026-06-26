@@ -40,6 +40,9 @@
     { "id": 41, "done": false, "title": "Pick up bottle of wine and gift card", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
     { "id": 42, "done": false, "title": "Get back to Unger", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
     { "id": 43, "done": false, "title": "Buy plants for the home show", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
-    { "id": 44, "done": false, "title": "Glass final items", "job": "", "due": "", "created": "2026-06-26", "recur": "" }
+    { "id": 44, "done": false, "title": "Glass final items", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 45, "done": false, "title": "Get flowers for home show", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 46, "done": false, "title": "Get walkie talkies for home show", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 47, "done": false, "title": "Contact Justin Kolic about lunch and learn panel", "job": "", "due": "", "created": "2026-06-26", "recur": "" }
   ]
 }
