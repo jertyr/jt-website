@@ -36,6 +36,8 @@
     { "id": 37, "done": false, "title": "Kasper gutters", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
     { "id": 38, "done": false, "title": "Order safety equipment", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
     { "id": 39, "done": false, "title": "Job details for brian", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
-    { "id": 40, "done": false, "title": "Review information for Justin", "job": "", "due": "", "created": "2026-06-26", "recur": "" }
+    { "id": 40, "done": false, "title": "Review information for Justin", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 41, "done": false, "title": "Pick up bottle of wine and gift card", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 42, "done": false, "title": "Get back to Unger", "job": "", "due": "", "created": "2026-06-26", "recur": "" }
   ]
 }
