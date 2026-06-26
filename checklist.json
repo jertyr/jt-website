@@ -32,6 +32,10 @@
     { "id": 33, "done": false, "title": "Template and order countertop", "job": "AXO", "due": "2026-05-27", "created": "2026-05-27", "recur": "" },
     { "id": 34, "done": false, "title": "Check in with Beth about screen (critter prevention under bump out)", "job": "AXO", "due": "2026-06-03", "created": "2026-05-27", "recur": "" },
     { "id": 35, "done": false, "title": "Put time off requests in for Dusty Paul and someone else", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
-    { "id": 36, "done": false, "title": "Maletic electrical and floorboard", "job": "", "due": "", "created": "2026-06-26", "recur": "" }
+    { "id": 36, "done": false, "title": "Maletic electrical and floorboard", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 37, "done": false, "title": "Kasper gutters", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 38, "done": false, "title": "Order safety equipment", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 39, "done": false, "title": "Job details for brian", "job": "", "due": "", "created": "2026-06-26", "recur": "" },
+    { "id": 40, "done": false, "title": "Review information for Justin", "job": "", "due": "", "created": "2026-06-26", "recur": "" }
   ]
 }
