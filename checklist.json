@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-28",
+  "updated": "2026-06-29",
   "items": [
     {
       "id": 1,
@@ -84,12 +84,13 @@
     },
     {
       "id": 10,
-      "done": false,
+      "done": true,
       "title": "Plan BRAG Remodelers Council meeting",
       "job": "BRAG Remodelers Council",
       "due": "2026-05-01",
       "created": "04-06",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 11,
