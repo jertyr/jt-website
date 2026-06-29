@@ -268,12 +268,13 @@
     },
     {
       "id": 35,
-      "done": false,
+      "done": true,
       "title": "Put time off requests in for Dusty Paul and someone else",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 36,
