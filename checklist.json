@@ -66,12 +66,13 @@
     },
     {
       "id": 8,
-      "done": false,
+      "done": true,
       "title": "Field crew meeting agenda",
       "job": "Business/General",
       "due": "2026-05-20",
       "created": "2026-04-29",
-      "recur": "biweekly"
+      "recur": "biweekly",
+      "completed": "2026-06-29"
     },
     {
       "id": 9,
