@@ -249,12 +249,13 @@
     },
     {
       "id": 33,
-      "done": false,
+      "done": true,
       "title": "Template and order countertop",
       "job": "AXO",
       "due": "2026-05-27",
       "created": "2026-05-27",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 34,
