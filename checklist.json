@@ -343,12 +343,13 @@
     },
     {
       "id": 43,
-      "done": false,
+      "done": true,
       "title": "Buy plants for the home show",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 44,
