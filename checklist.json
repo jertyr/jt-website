@@ -333,12 +333,13 @@
     },
     {
       "id": 42,
-      "done": false,
+      "done": true,
       "title": "Get back to Unger",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 43,
