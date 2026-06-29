@@ -362,21 +362,23 @@
     },
     {
       "id": 45,
-      "done": false,
+      "done": true,
       "title": "Get flowers for home show",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 46,
-      "done": false,
+      "done": true,
       "title": "Get walkie talkies for home show",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 47,
