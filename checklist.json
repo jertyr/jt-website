@@ -419,12 +419,13 @@
     },
     {
       "id": 51,
-      "done": false,
+      "done": true,
       "title": "Get AJ",
       "job": "",
       "due": "",
       "created": "2026-06-28",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 52,
