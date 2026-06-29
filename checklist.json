@@ -391,12 +391,13 @@
     },
     {
       "id": 48,
-      "done": false,
+      "done": true,
       "title": "Test",
       "job": "",
       "due": "",
       "created": "2026-06-27",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-29"
     },
     {
       "id": 49,
