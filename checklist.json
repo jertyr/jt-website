@@ -383,12 +383,13 @@
     },
     {
       "id": 47,
-      "done": false,
+      "done": true,
       "title": "Contact Justin Kolic about lunch and learn panel",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-30"
     },
     {
       "id": 48,
