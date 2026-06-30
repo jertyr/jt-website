@@ -76,12 +76,13 @@
     },
     {
       "id": 9,
-      "done": false,
+      "done": true,
       "title": "Close our job file",
       "job": "Unger",
       "due": "04-03-2026",
       "created": "03-25-2026",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-30"
     },
     {
       "id": 10,
