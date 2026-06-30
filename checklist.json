@@ -449,12 +449,13 @@
     },
     {
       "id": 54,
-      "done": false,
+      "done": true,
       "title": "Email Peter Unger about permit",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-06-30"
     },
     {
       "id": 55,
