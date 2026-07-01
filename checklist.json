@@ -546,6 +546,15 @@
       "due": "",
       "created": "2026-07-01",
       "recur": ""
+    },
+    {
+      "id": 65,
+      "done": false,
+      "title": "Plot quantity of devices to cost estimated by Harper across there existing bids to us and then present it in a sales meeting",
+      "job": "",
+      "due": "",
+      "created": "2026-07-01",
+      "recur": ""
     }
   ]
 }
