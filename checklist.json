@@ -461,12 +461,13 @@
     },
     {
       "id": 55,
-      "done": false,
+      "done": true,
       "title": "Draw Miller roof and quote materials",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 56,
