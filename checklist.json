@@ -538,12 +538,13 @@
     },
     {
       "id": 63,
-      "done": false,
+      "done": true,
       "title": "Check Mike's timesheets",
       "job": "",
       "due": "",
       "created": "2026-07-01",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 64,
