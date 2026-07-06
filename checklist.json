@@ -509,12 +509,13 @@
     },
     {
       "id": 60,
-      "done": false,
+      "done": true,
       "title": "Order Tedford Plumbing",
       "job": "",
       "due": "",
       "created": "2026-06-30",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 61,
