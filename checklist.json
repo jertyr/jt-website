@@ -307,23 +307,21 @@
     },
     {
       "id": 39,
-      "done": true,
+      "done": false,
       "title": "Job details for brian",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 40,
-      "done": true,
+      "done": false,
       "title": "Review information for Justin",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 41,
@@ -461,33 +459,30 @@
     },
     {
       "id": 55,
-      "done": true,
+      "done": false,
       "title": "Draw Miller roof and quote materials",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 56,
-      "done": true,
+      "done": false,
       "title": "Draw Miller basement",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 57,
-      "done": true,
+      "done": false,
       "title": "Price Sabbag trim",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 58,
@@ -509,23 +504,21 @@
     },
     {
       "id": 60,
-      "done": true,
+      "done": false,
       "title": "Order Tedford Plumbing",
       "job": "",
       "due": "",
       "created": "2026-06-30",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 61,
-      "done": true,
+      "done": false,
       "title": "Update home show plan",
       "job": "",
       "due": "",
       "created": "2026-07-01",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 62,
@@ -538,23 +531,21 @@
     },
     {
       "id": 63,
-      "done": true,
+      "done": false,
       "title": "Check Mike's timesheets",
       "job": "",
       "due": "",
       "created": "2026-07-01",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 64,
-      "done": true,
+      "done": false,
       "title": "Send Ted info on the proposal Builder",
       "job": "",
       "due": "",
       "created": "2026-07-01",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 65,
@@ -567,33 +558,30 @@
     },
     {
       "id": 66,
-      "done": true,
+      "done": false,
       "title": "One more security light for Tedford",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 67,
-      "done": true,
+      "done": false,
       "title": "Buy globe for Tedford light",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 68,
-      "done": true,
+      "done": false,
       "title": "Buy globe for Tedford light",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 69,
@@ -625,7 +613,7 @@
     {
       "id": 72,
       "done": false,
-      "title": "Put up safety and training cork board",
+      "title": "Clear caulk at AXO",
       "job": "",
       "due": "",
       "created": "2026-07-06",
