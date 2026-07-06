@@ -558,12 +558,13 @@
     },
     {
       "id": 66,
-      "done": false,
+      "done": true,
       "title": "One more security light for Tedford",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 67,
