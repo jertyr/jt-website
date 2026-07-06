@@ -519,12 +519,13 @@
     },
     {
       "id": 61,
-      "done": false,
+      "done": true,
       "title": "Update home show plan",
       "job": "",
       "due": "",
       "created": "2026-07-01",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 62,
