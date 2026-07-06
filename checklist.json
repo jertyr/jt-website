@@ -307,12 +307,13 @@
     },
     {
       "id": 39,
-      "done": false,
+      "done": true,
       "title": "Job details for brian",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 40,
