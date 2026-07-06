@@ -576,12 +576,13 @@
     },
     {
       "id": 68,
-      "done": false,
+      "done": true,
       "title": "Buy globe for Tedford light",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 69,
