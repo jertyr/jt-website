@@ -317,12 +317,13 @@
     },
     {
       "id": 40,
-      "done": false,
+      "done": true,
       "title": "Review information for Justin",
       "job": "",
       "due": "",
       "created": "2026-06-26",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 41,
