@@ -468,21 +468,23 @@
     },
     {
       "id": 56,
-      "done": false,
+      "done": true,
       "title": "Draw Miller basement",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 57,
-      "done": false,
+      "done": true,
       "title": "Price Sabbag trim",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-06"
     },
     {
       "id": 58,
