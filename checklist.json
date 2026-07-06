@@ -558,33 +558,30 @@
     },
     {
       "id": 66,
-      "done": true,
+      "done": false,
       "title": "One more security light for Tedford",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 67,
-      "done": true,
+      "done": false,
       "title": "Buy globe for Tedford light",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 68,
-      "done": true,
+      "done": false,
       "title": "Buy globe for Tedford light",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": "",
-      "completed": "2026-07-06"
+      "recur": ""
     },
     {
       "id": 69,
