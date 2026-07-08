@@ -676,6 +676,15 @@
       "due": "",
       "created": "2026-07-08",
       "recur": ""
+    },
+    {
+      "id": 78,
+      "done": false,
+      "title": "Ask about mission statement, what do we stand for what do we do who do we do it for why do we do it",
+      "job": "",
+      "due": "",
+      "created": "2026-07-08",
+      "recur": ""
     }
   ]
 }
