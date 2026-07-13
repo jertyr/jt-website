@@ -151,12 +151,13 @@
     },
     {
       "id": 17,
-      "done": false,
+      "done": true,
       "title": "Install door strike",
       "job": "Etheridge",
       "due": "2026-05-01",
       "created": "2026-04-24",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-13"
     },
     {
       "id": 18,
@@ -747,6 +748,24 @@
       "id": 85,
       "done": false,
       "title": "Job signs for Ruff",
+      "job": "",
+      "due": "",
+      "created": "2026-07-13",
+      "recur": ""
+    },
+    {
+      "id": 86,
+      "done": false,
+      "title": "Sander for Aj",
+      "job": "",
+      "due": "",
+      "created": "2026-07-13",
+      "recur": ""
+    },
+    {
+      "id": 87,
+      "done": false,
+      "title": "First aid for roof",
       "job": "",
       "due": "",
       "created": "2026-07-13",
