@@ -619,12 +619,13 @@
     },
     {
       "id": 71,
-      "done": false,
+      "done": true,
       "title": "Call Rick about maletic",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-14"
     },
     {
       "id": 72,
