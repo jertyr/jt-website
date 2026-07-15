@@ -650,12 +650,13 @@
     },
     {
       "id": 74,
-      "done": false,
+      "done": true,
       "title": "Cabinet lumber list for tedford",
       "job": "",
       "due": "",
       "created": "2026-07-08",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-15"
     },
     {
       "id": 75,
