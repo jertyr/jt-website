@@ -494,12 +494,13 @@
     },
     {
       "id": 58,
-      "done": false,
+      "done": true,
       "title": "Put a schedule together for wiedmer",
       "job": "",
       "due": "",
       "created": "2026-06-29",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-15"
     },
     {
       "id": 59,
