@@ -188,12 +188,13 @@
     },
     {
       "id": 21,
-      "done": false,
+      "done": true,
       "title": "Order putty pads",
       "job": "Ruff",
       "due": "2026-05-01",
       "created": "2026-04-24",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-15"
     },
     {
       "id": 22,
