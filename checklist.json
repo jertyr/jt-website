@@ -679,12 +679,13 @@
     },
     {
       "id": 77,
-      "done": false,
+      "done": true,
       "title": "Check costs on brady",
       "job": "",
       "due": "",
       "created": "2026-07-08",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-15"
     },
     {
       "id": 78,
