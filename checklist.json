@@ -808,12 +808,13 @@
     },
     {
       "id": 91,
-      "done": false,
+      "done": true,
       "title": "Follow Up Harper (Sutherland)",
       "job": "",
       "due": "",
       "created": "2026-07-13",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-15"
     },
     {
       "id": 92,
