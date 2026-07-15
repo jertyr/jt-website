@@ -602,12 +602,13 @@
     },
     {
       "id": 69,
-      "done": false,
+      "done": true,
       "title": "18\" bar for Tedford",
       "job": "",
       "due": "",
       "created": "2026-07-02",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-15"
     },
     {
       "id": 70,
