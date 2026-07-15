@@ -762,12 +762,13 @@
     },
     {
       "id": 86,
-      "done": false,
+      "done": true,
       "title": "Sander for Aj",
       "job": "",
       "due": "",
       "created": "2026-07-13",
-      "recur": ""
+      "recur": "",
+      "completed": "2026-07-15"
     },
     {
       "id": 87,
