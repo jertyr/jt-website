@@ -110,6 +110,7 @@
     <button data-tab="people" class="active">People</button>
     <button data-tab="meetings">Meetings</button>
     <button data-tab="calendar">Calendar</button>
+    <button data-tab="tasks">Tasks</button>
   </div>
 
   <div id="view"></div>
@@ -194,6 +195,7 @@ async function renderTab() {
   if (currentTab === "people") return renderPeople();
   if (currentTab === "meetings") return renderMeetings();
   if (currentTab === "calendar") return renderCalendar();
+  if (currentTab === "tasks") return renderTasks();
 }
 
 /* ========================= PEOPLE ========================= */
@@ -364,6 +366,82 @@ async function renderCalendar() {
     if (error) return alert(error.message);
     renderCalendar();
   });
+}
+
+/* ========================= TASKS ========================= */
+async function renderTasks() {
+  const { data: tasks, error } = await sb.from("tasks")
+    .select("*").order("done").order("due", { nullsFirst: false }).order("created", { nullsFirst: false });
+  if (error) return showErr(error);
+  const open = (tasks || []).filter(t => !t.done);
+  const done = (tasks || []).filter(t => t.done);
+  const v = view(); v.innerHTML = "";
+
+  // Add form
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld full">New task<input id="tTitle" type="text" placeholder="What needs doing…"></label>
+    <label class="fld">Job (optional)<input id="tJob" type="text" placeholder="Client / Personal"></label>
+    <label class="fld">Due (optional)<input id="tDue" type="date"></label>
+    <div class="full"><button id="tAdd">Add task</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  const addTask = async () => {
+    const title = document.getElementById("tTitle").value.trim();
+    if (!title) return;
+    const { error } = await sb.from("tasks").insert({
+      title, job: document.getElementById("tJob").value.trim() || null,
+      due: document.getElementById("tDue").value || null, created: today() });
+    if (error) return alert(error.message);
+    renderTasks();
+  };
+  document.getElementById("tAdd").addEventListener("click", addTask);
+  document.getElementById("tTitle").addEventListener("keydown", e => { if (e.key === "Enter") addTask(); });
+
+  v.appendChild(el(`<div class="group-h" style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px">Open (${open.length})</div>`));
+  const openWrap = el('<div></div>');
+  open.forEach(t => openWrap.appendChild(taskRow(t)));
+  if (!open.length) openWrap.appendChild(el('<div class="empty">🎉 Nothing open.</div>'));
+  v.appendChild(openWrap);
+
+  if (done.length) {
+    const details = document.createElement("details");
+    details.style.marginTop = "18px";
+    details.appendChild(el(`<summary style="cursor:pointer;color:var(--muted);font-size:13px;font-weight:600">Done (${done.length})</summary>`));
+    const dWrap = el('<div style="margin-top:10px"></div>');
+    done.forEach(t => dWrap.appendChild(taskRow(t)));
+    details.appendChild(dWrap);
+    v.appendChild(details);
+  }
+}
+
+function taskRow(t) {
+  const row = el(`<div class="card2" style="display:flex;align-items:flex-start;gap:10px;${t.done ? "opacity:.6" : ""}"></div>`);
+  const cb = document.createElement("input");
+  cb.type = "checkbox"; cb.checked = t.done; cb.style.cssText = "margin-top:3px;width:18px;height:18px;accent-color:var(--green);cursor:pointer";
+  cb.addEventListener("change", async () => {
+    const { error } = await sb.from("tasks").update({
+      done: cb.checked, completed: cb.checked ? today() : null }).eq("id", t.id);
+    if (error) { alert(error.message); return; }
+    renderTasks();
+  });
+  const body = el(`<div style="flex:1;min-width:0">
+    <div style="font-size:15px;${t.done ? "text-decoration:line-through" : ""}">${esc(t.title)}</div>
+    <div class="sub" style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
+      ${t.job ? `<span class="badge">${esc(t.job)}</span>` : ""}
+      ${t.due ? `<span class="badge" style="color:var(--accent)">due ${esc(t.due)}</span>` : ""}
+      ${t.recur ? `<span class="badge" style="color:var(--green)">↻ ${esc(t.recur)}</span>` : ""}
+      ${t.done && t.completed ? `<span class="badge">done ${esc(t.completed)}</span>` : ""}
+    </div>
+  </div>`);
+  const del = el('<button class="ghost" title="Delete" style="font-size:16px">✕</button>');
+  del.addEventListener("click", async () => {
+    if (!confirm("Delete this task?")) return;
+    const { error } = await sb.from("tasks").delete().eq("id", t.id);
+    if (error) return alert(error.message);
+    renderTasks();
+  });
+  row.append(cb, body, del);
+  return row;
 }
 
 function showErr(error) {
