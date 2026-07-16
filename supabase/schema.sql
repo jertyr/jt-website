@@ -10,8 +10,8 @@
 --     Supabase MCP connector) so there are no duplicate files and no drift.
 --   * You read/write the same tables from notebook.html on any device.
 --   * Private by default: Row-Level Security blocks anonymous access. Only a
---     logged-in user (you, via magic link) or the service role (the MCP
---     connector) can see or change anything.
+--     logged-in user (you, via magic link) or the Supabase MCP connector Claude
+--     uses (OAuth to your Supabase account) can see or change anything.
 --
 -- See NOTEBOOK.md for how each table is meant to be used.
 -- =============================================================================
@@ -127,18 +127,41 @@ create trigger calendar_items_updated_at before update on calendar_items
   for each row execute function set_updated_at();
 
 -- =============================================================================
+-- tasks  — checklist / to-do items (migrated from the old checklist.json)
+-- Shares this backend so the checklist and notebook are one database.
+-- =============================================================================
+create table if not exists tasks (
+  id          uuid primary key default gen_random_uuid(),
+  legacy_id   int unique,                       -- original checklist.json id (for the one-time migration)
+  title       text not null,
+  job         text,                              -- grouping: 'Personal', a client/job name, etc.
+  done        boolean not null default false,
+  due         date,
+  created     date,                              -- when the task was first noted
+  completed   date,                              -- when it was checked off
+  recur       text,                              -- e.g. 'biweekly' (freeform, as in the old app)
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists tasks_done_due_idx on tasks(done, due);
+
+drop trigger if exists tasks_updated_at on tasks;
+create trigger tasks_updated_at before update on tasks
+  for each row execute function set_updated_at();
+
+-- =============================================================================
 -- Row-Level Security — private by default
 -- =============================================================================
 -- Enable RLS on every table, then allow full access ONLY to:
---   * authenticated  = you, signed in on notebook.html via magic link
---   * service_role   = the Supabase MCP connector Claude uses (bypasses RLS
---                      anyway, but listed for clarity)
+--   * authenticated  = you, signed in via magic link (notebook.html)
+--   * the Supabase MCP connector Claude uses (connects via OAuth to your
+--     Supabase account, so it operates with elevated privileges)
 -- The anon role gets NO policy, so anonymous visitors see nothing.
 
 do $$
 declare t text;
 begin
-  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items']
+  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items','tasks']
   loop
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists "authenticated full access" on %I;', t);
@@ -157,5 +180,5 @@ end $$;
 -- =============================================================================
 
 -- =============================================================================
--- Done. Verify with:  select * from people; select * from person_notes;
+-- Done. Verify with:  select * from people;  select * from tasks;
 -- =============================================================================

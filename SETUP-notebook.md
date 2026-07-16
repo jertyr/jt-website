@@ -33,14 +33,15 @@ need them below:
 
 | Key | Where it's used | Secret? |
 |-----|-----------------|---------|
-| **Project URL** (`https://xxxx.supabase.co`) | `notebook.html` and MCP | no |
-| **anon / public** key | `notebook.html` | no (safe to ship — RLS protects data) |
-| **service_role** key | the Supabase MCP connector only | **YES — never put in the website** |
+| **Project URL** (`https://xxxx.supabase.co`) | `notebook.html` | no |
+| **anon / publishable** key | `notebook.html` | no (safe to ship — RLS protects data) |
 
-> The `anon` key is *designed* to be public. It can't read anything because
-> Row-Level Security blocks anonymous access — only a logged-in user can. The
-> `service_role` key bypasses RLS, so it stays secret and lives only in the MCP
-> connector config, never in the repo or the web page.
+> The `anon`/publishable key is *designed* to be public. It can't read anything
+> because Row-Level Security blocks anonymous access — only a logged-in user can.
+>
+> You do **not** need the `service_role`/secret key here. Claude's connector
+> (step 6) authenticates by **OAuth**, not by a pasted key — so the secret key
+> never has to leave Supabase.
 
 ## 4. Turn on magic-link login (so the web page is really private)
 
@@ -70,20 +71,21 @@ magic link Supabase emails you, and you're in. It works the same on your phone.
 
 ## 6. Connect Claude to the notebook (the MCP connector)
 
-This is what lets Claude read/write the notebook in place.
+This is what lets Claude read/write the notebook in place. It uses **OAuth** —
+no keys to copy.
 
-1. In Supabase: **Project Settings → Access Tokens** (or reuse the
-   `service_role` key from step 3).
-2. In the **Claude app** (desktop or mobile) → **Settings → Connectors →
-   Add connector → Supabase** (the official Supabase MCP connector). Paste your
-   **Project URL** and **service_role** access token when prompted.
-3. Once connected, ask Claude to read your notebook — it should return your
-   rows. From then on it can add 1:1 notes, meeting agendas/digests, and
-   calendar items directly.
-
-> If you don't see a built-in Supabase connector, the official server is
-> published at **`@supabase/mcp-server-supabase`** — Claude can walk you through
-> adding it as a custom MCP server with the same URL + service_role token.
+1. In **claude.ai** → **Settings → Connectors** (on web, the connectors/plug
+   icon near the chat box → **Browse connectors**).
+2. Find **Supabase** ("Manage databases, authentication, and storage") →
+   **Connect**.
+3. It sends you through **Supabase OAuth** — log in and **authorize**, picking
+   the organization/project that holds this notebook. Leave any **read-only**
+   toggle **off** so Claude can write.
+4. **Enable the connector for this chat** (the same connectors icon by the chat
+   box — switch Supabase on for the conversation).
+5. Ask Claude to read your notebook — it should return your rows. From then on
+   it can add 1:1 notes, meeting agendas/digests, calendar items, and tasks
+   directly.
 
 ---
 

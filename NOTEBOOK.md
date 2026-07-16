@@ -22,6 +22,7 @@ consistent over time. If you (Claude) are reading this, follow it exactly.
 | `meetings` | a recurring meeting definition | Leadership (2×/wk), Field Crew AM (biweekly Thu) |
 | `meeting_entries` | one occurrence of a meeting | pre-meeting agenda + post-meeting digest, per date |
 | `calendar_items` | a personal calendar entry | birthdays, kids' activities, appointments, reminders |
+| `tasks` | a checklist / to-do item | migrated from `checklist.json`; `done`, `due`, `job`, `recur` |
 
 Everything is private (Row-Level Security). Anonymous users see nothing.
 
@@ -81,16 +82,24 @@ Delivery mechanism: a Supabase **Edge Function** on a cron schedule. Until that'
 built, Claude can generate the same lookahead on request from these tables + the
 Google Calendar connector.
 
-## Later (phase 3)
-Fold the existing checklist (`checklist.json` + Cloudflare Worker) into a
-Supabase `tasks` table so it shares this backend — the "same backend for a future
-checklist app" goal from the original plan.
+### `tasks`
+- Migrated from the old `checklist.json`. `job` is the grouping (a client/job
+  name or `Personal`); `done` + `completed` track state; `due`/`created` are
+  dates; `recur` is freeform (e.g. `biweekly`).
+- `legacy_id` maps back to the original checklist id — only meaningful for the
+  one-time migration; new tasks leave it null.
+
+## Later (phase 3b)
+The checklist data now lives in `tasks`. Next step is pointing `checklist.html`
+at Supabase (like `notebook.html`) so the web app reads/writes this table
+directly instead of the `checklist.json` + Cloudflare Worker path.
 
 ---
 
 ## Access model (why it's safe)
-- **Claude** connects with the Supabase **service role** through the MCP
-  connector → full read/write, bypasses RLS.
+- **Claude** connects through the official **Supabase MCP connector** (OAuth to
+  your Supabase account, added in claude.ai → Settings → Connectors) → full
+  read/write. No service_role key is pasted anywhere.
 - **Jerry** signs into `notebook.html` with a **magic link** (Supabase Auth) →
   the `authenticated` role, full read/write via RLS policy.
 - **Everyone else** (anon) → no policy → sees nothing. The page is on public
