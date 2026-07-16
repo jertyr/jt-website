@@ -273,10 +273,15 @@ async function renderPersonFile(p) {
 }
 
 /* ========================= MEETINGS ========================= */
+const groupH = 'color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px';
+
 async function renderMeetings() {
   const { data: meetings, error } = await sb.from("meetings").select("*").eq("active", true).order("name");
   if (error) return showErr(error);
   const v = view(); v.innerHTML = "";
+
+  // Meeting definitions — click one to add/view its own entries
+  v.appendChild(el(`<div style="${groupH}">Meetings — tap to add an entry</div>`));
   (meetings || []).forEach(m => {
     const c = el(`<div class="card2 clickable"><h3>${esc(m.name)}</h3>
       <div class="sub">${esc(m.cadence || "")}${m.day_of_week ? " · " + esc(m.day_of_week) : ""}${m.participants ? " · " + esc(m.participants) : ""}</div></div>`);
@@ -284,6 +289,22 @@ async function renderMeetings() {
     v.appendChild(c);
   });
   if (!meetings || !meetings.length) v.appendChild(el('<div class="empty">No meetings defined.</div>'));
+
+  // Chronological feed of ALL entries across meetings (most recent first)
+  const { data: entries, error: e2 } = await sb.from("meeting_entries")
+    .select("*, meetings(name)").order("entry_date", { ascending: false });
+  if (e2) return showErr(e2);
+  v.appendChild(el(`<div style="${groupH}">All entries — most recent first</div>`));
+  (entries || []).forEach(en => v.appendChild(el(`<div class="card2">
+    <div class="sub" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="badge" style="color:var(--accent)">${esc(en.meetings ? en.meetings.name : "")}</span>
+      <span class="badge">${esc(en.status)}</span>
+      <span>${esc(en.entry_date)}</span>
+    </div>
+    ${en.agenda ? `<p style="margin:8px 0 0"><strong>Agenda:</strong> ${esc(en.agenda)}</p>` : ""}
+    ${en.digest ? `<p style="margin:8px 0 0"><strong>Digest:</strong> ${esc(en.digest)}</p>` : ""}
+  </div>`)));
+  if (!entries || !entries.length) v.appendChild(el('<div class="empty">No meeting entries yet — add one above, or run today\'s update file.</div>'));
 }
 
 async function renderMeeting(m) {
