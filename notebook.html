@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Notebook</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #181b22; --panel-2: #1f232c; --line: #2b313c;
+    --text: #e7eaf0; --muted: #93a0b4; --accent: #4f9dff;
+    --red: #ff5c5c; --amber: #ffb74d; --green: #4caf78;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); line-height: 1.45;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 80px; }
+  a { color: var(--accent); }
+
+  /* ---- Auth gate ---- */
+  #gate { position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+  #gate .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 28px; width: 360px; max-width: 92vw; }
+  #gate h1 { font-size: 18px; margin: 0 0 4px; }
+  #gate p { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+  #gate input { width: 100%; padding: 10px 12px; margin-bottom: 10px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font-size: 14px; }
+  .msg { font-size: 12.5px; min-height: 16px; margin-top: 4px; }
+  .msg.err { color: var(--red); } .msg.ok { color: var(--green); } .msg.muted { color: var(--muted); }
+
+  button { cursor: pointer; border: none; border-radius: 8px; font-size: 14px;
+    padding: 9px 14px; background: var(--accent); color: #fff; font-weight: 600; }
+  button.secondary { background: var(--panel-2); color: var(--text); border: 1px solid var(--line); font-weight: 500; }
+  button.ghost { background: transparent; color: var(--muted); padding: 4px 8px; font-weight: 500; }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .5; cursor: default; }
+
+  header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap; margin-bottom: 14px; }
+  header.top h1 { font-size: 22px; margin: 0; }
+  .who { color: var(--muted); font-size: 12.5px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .tabs button { background: transparent; color: var(--muted); border: none; border-bottom: 2px solid transparent;
+    border-radius: 0; padding: 8px 12px; font-weight: 600; }
+  .tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .card2 { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; margin-bottom: 10px; }
+  .card2 h3 { margin: 0 0 4px; font-size: 15px; }
+  .card2 .sub { color: var(--muted); font-size: 12.5px; }
+  .clickable { cursor: pointer; } .clickable:hover { border-color: var(--accent); }
+
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .spacer { flex: 1; }
+  input[type=text], input[type=date], select, textarea {
+    padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel-2); color: var(--text); font-size: 14px; font-family: inherit; }
+  textarea { width: 100%; min-height: 70px; resize: vertical; }
+  label.fld { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .04em; }
+
+  .note { border-left: 2px solid var(--line); padding: 6px 0 6px 12px; margin: 8px 0; }
+  .note .head { font-size: 11.5px; color: var(--muted); display: flex; gap: 8px; }
+  .badge { padding: 1px 7px; border-radius: 20px; background: var(--panel-2); border: 1px solid var(--line);
+    color: var(--muted); font-size: 11px; }
+  .badge.type-1\3a 1 { color: var(--accent); }
+  .badge.type-goal { color: var(--green); }
+  .badge.type-expectation { color: var(--amber); }
+  .badge.type-observation { color: #cdd6e4; }
+
+  .back { font-size: 13px; margin-bottom: 12px; display: inline-block; }
+  .add-box { background: var(--panel); border: 1px dashed var(--line); border-radius: 10px;
+    padding: 12px 14px; margin: 14px 0; }
+  .add-grid { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: end; }
+  .add-grid .full { grid-column: 1 / -1; }
+  @media (max-width: 600px){ .add-grid { grid-template-columns: 1fr; } }
+  .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
+  .setup { background: var(--panel); border: 1px solid var(--amber); border-radius: 10px; padding: 16px;
+    color: var(--text); font-size: 13.5px; }
+  code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ===== Auth gate (real: Supabase magic link) ===== -->
+<div id="gate">
+  <div class="card">
+    <h1>📓 Notebook</h1>
+    <p>Sign in with your email — you'll get a one-time magic link.</p>
+    <div id="gateBody">
+      <input id="email" type="email" placeholder="you@example.com" autocomplete="email">
+      <button id="loginBtn" style="width:100%">Send magic link</button>
+      <div class="msg muted" id="gateMsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <header class="top">
+    <h1>📓 Notebook</h1>
+    <div class="who"><span id="whoEmail"></span> · <button class="ghost" id="logoutBtn">Sign out</button></div>
+  </header>
+
+  <div class="tabs">
+    <button data-tab="people" class="active">People</button>
+    <button data-tab="meetings">Meetings</button>
+    <button data-tab="calendar">Calendar</button>
+  </div>
+
+  <div id="view"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* =========================================================================
+   CONFIG — fill these in after creating your Supabase project.
+   See SETUP-notebook.md. Until both are set, the page shows setup instructions.
+   The anon key is SAFE to publish: Row-Level Security blocks anonymous access,
+   so nothing is readable without signing in. The service_role key must NEVER
+   go here — it lives only in the Claude MCP connector.
+   ========================================================================= */
+const SUPABASE_URL  = "https://zyqawhqazuvgavqnngmn.supabase.co";
+const SUPABASE_ANON = "sb_publishable_X5ORIPYRjJ2rql8cejljeA_Loipyqq7";
+
+const gate = document.getElementById("gate");
+const app  = document.getElementById("app");
+let sb = null, currentTab = "people";
+
+/* ---------- Boot ---------- */
+if (!SUPABASE_URL || !SUPABASE_ANON) {
+  showSetupNeeded();
+} else {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  boot();
+}
+
+function showSetupNeeded() {
+  document.getElementById("gateBody").innerHTML =
+    '<div class="setup">This page isn\'t connected yet. Add your Supabase '
+    + '<code>SUPABASE_URL</code> and <code>SUPABASE_ANON</code> near the top of '
+    + 'this file\'s script (see <code>SETUP-notebook.md</code>), then reload.</div>';
+}
+
+async function boot() {
+  // Handle the magic-link redirect + existing session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return showApp(session);
+  sb.auth.onAuthStateChange((_e, s) => { if (s) showApp(s); });
+
+  document.getElementById("loginBtn").addEventListener("click", sendLink);
+  document.getElementById("email").addEventListener("keydown", e => { if (e.key === "Enter") sendLink(); });
+}
+
+async function sendLink() {
+  const email = document.getElementById("email").value.trim();
+  const msg = document.getElementById("gateMsg");
+  if (!email) { msg.className = "msg err"; msg.textContent = "Enter your email."; return; }
+  msg.className = "msg muted"; msg.textContent = "Sending…";
+  const { error } = await sb.auth.signInWithOtp({
+    email, options: { emailRedirectTo: window.location.href.split("#")[0] }
+  });
+  if (error) { msg.className = "msg err"; msg.textContent = error.message; }
+  else { msg.className = "msg ok"; msg.textContent = "Check your email for the sign-in link."; }
+}
+
+function showApp(session) {
+  gate.style.display = "none";
+  app.style.display = "block";
+  document.getElementById("whoEmail").textContent = session.user.email;
+  document.getElementById("logoutBtn").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  document.querySelectorAll(".tabs button").forEach(b =>
+    b.addEventListener("click", () => { currentTab = b.dataset.tab; setActiveTab(); renderTab(); }));
+  setActiveTab(); renderTab();
+}
+function setActiveTab() {
+  document.querySelectorAll(".tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === currentTab));
+}
+
+/* ---------- helpers ---------- */
+const view = () => document.getElementById("view");
+function el(html) { const d = document.createElement("div"); d.innerHTML = html.trim(); return d.firstChild; }
+function esc(s) { return (s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c])); }
+async function q(table) { return sb.from(table); }
+function today() { return new Date().toISOString().slice(0,10); }
+
+async function renderTab() {
+  view().innerHTML = '<div class="empty">Loading…</div>';
+  if (currentTab === "people") return renderPeople();
+  if (currentTab === "meetings") return renderMeetings();
+  if (currentTab === "calendar") return renderCalendar();
+}
+
+/* ========================= PEOPLE ========================= */
+async function renderPeople() {
+  const { data: people, error } = await sb.from("people").select("*").eq("active", true).order("name");
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  (people || []).forEach(p => {
+    const c = el(`<div class="card2 clickable">
+      <h3>${esc(p.name)}</h3>
+      <div class="sub">${esc(p.role || "")}${p.relationship ? " · " + esc(p.relationship) : ""}</div>
+    </div>`);
+    c.addEventListener("click", () => renderPersonFile(p));
+    v.appendChild(c);
+  });
+  if (!people || !people.length) v.appendChild(el('<div class="empty">No people yet.</div>'));
+
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld full">Name<input id="pName" type="text" placeholder="Full name"></label>
+    <label class="fld">Role<input id="pRole" type="text" placeholder="Runner"></label>
+    <label class="fld">Relationship<input id="pRel" type="text" placeholder="Direct report"></label>
+    <div class="full"><button id="pAdd">Add person</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  document.getElementById("pAdd").addEventListener("click", async () => {
+    const name = document.getElementById("pName").value.trim();
+    if (!name) return;
+    const slug = name.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]/g, "");
+    const { error } = await sb.from("people").insert({
+      slug, name, role: document.getElementById("pRole").value.trim() || null,
+      relationship: document.getElementById("pRel").value.trim() || null });
+    if (error) return alert(error.message);
+    renderPeople();
+  });
+}
+
+async function renderPersonFile(p) {
+  const { data: notes, error } = await sb.from("person_notes")
+    .select("*").eq("person_id", p.id).order("note_date", { ascending: false });
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  const back = el('<a class="back" href="#">← All people</a>');
+  back.addEventListener("click", e => { e.preventDefault(); renderPeople(); });
+  v.appendChild(back);
+  v.appendChild(el(`<div class="card2"><h3>${esc(p.name)}</h3>
+    <div class="sub">${esc(p.role || "")}${p.relationship ? " · " + esc(p.relationship) : ""}${p.org ? " · " + esc(p.org) : ""}</div>
+    ${p.context ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(p.context)}</p>` : ""}</div>`));
+
+  const list = el('<div></div>');
+  (notes || []).forEach(n => list.appendChild(el(`<div class="note">
+    <div class="head"><span class="badge type-${esc(n.type)}">${esc(n.type)}</span><span>${esc(n.note_date)}</span></div>
+    <div>${esc(n.body)}</div></div>`)));
+  if (!notes || !notes.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
+  v.appendChild(list);
+
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld">Type<select id="nType">
+      <option value="1:1">1:1</option><option value="note">note</option>
+      <option value="goal">goal</option><option value="expectation">expectation</option>
+      <option value="observation">observation</option></select></label>
+    <label class="fld">Date<input id="nDate" type="date" value="${today()}"></label>
+    <label class="fld full">Note<textarea id="nBody" placeholder="What happened / what was decided…"></textarea></label>
+    <div class="full"><button id="nAdd">Add note</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  document.getElementById("nAdd").addEventListener("click", async () => {
+    const body = document.getElementById("nBody").value.trim();
+    if (!body) return;
+    const { error } = await sb.from("person_notes").insert({
+      person_id: p.id, type: document.getElementById("nType").value,
+      note_date: document.getElementById("nDate").value || today(), body });
+    if (error) return alert(error.message);
+    renderPersonFile(p);
+  });
+}
+
+/* ========================= MEETINGS ========================= */
+async function renderMeetings() {
+  const { data: meetings, error } = await sb.from("meetings").select("*").eq("active", true).order("name");
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  (meetings || []).forEach(m => {
+    const c = el(`<div class="card2 clickable"><h3>${esc(m.name)}</h3>
+      <div class="sub">${esc(m.cadence || "")}${m.day_of_week ? " · " + esc(m.day_of_week) : ""}${m.participants ? " · " + esc(m.participants) : ""}</div></div>`);
+    c.addEventListener("click", () => renderMeeting(m));
+    v.appendChild(c);
+  });
+  if (!meetings || !meetings.length) v.appendChild(el('<div class="empty">No meetings defined.</div>'));
+}
+
+async function renderMeeting(m) {
+  const { data: entries, error } = await sb.from("meeting_entries")
+    .select("*").eq("meeting_id", m.id).order("entry_date", { ascending: false });
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  const back = el('<a class="back" href="#">← All meetings</a>');
+  back.addEventListener("click", e => { e.preventDefault(); renderMeetings(); });
+  v.appendChild(back);
+  v.appendChild(el(`<div class="card2"><h3>${esc(m.name)}</h3>
+    <div class="sub">${esc(m.cadence || "")}${m.day_of_week ? " · " + esc(m.day_of_week) : ""}${m.participants ? " · " + esc(m.participants) : ""}</div>
+    ${m.notes ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(m.notes)}</p>` : ""}</div>`));
+
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld">Date<input id="eDate" type="date" value="${today()}"></label>
+    <div></div>
+    <label class="fld full">Agenda (pre-meeting topics)<textarea id="eAgenda"></textarea></label>
+    <label class="fld full">Digest (post-meeting recap)<textarea id="eDigest"></textarea></label>
+    <div class="full"><button id="eAdd">Save entry</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  document.getElementById("eAdd").addEventListener("click", async () => {
+    const entry_date = document.getElementById("eDate").value || today();
+    const agenda = document.getElementById("eAgenda").value.trim();
+    const digest = document.getElementById("eDigest").value.trim();
+    const status = digest ? "done" : "upcoming";
+    // upsert on (meeting_id, entry_date)
+    const { error } = await sb.from("meeting_entries")
+      .upsert({ meeting_id: m.id, entry_date, agenda: agenda || null, digest: digest || null, status },
+              { onConflict: "meeting_id,entry_date" });
+    if (error) return alert(error.message);
+    renderMeeting(m);
+  });
+
+  const list = el('<div></div>');
+  (entries || []).forEach(en => list.appendChild(el(`<div class="card2">
+    <div class="sub"><span class="badge">${esc(en.status)}</span> ${esc(en.entry_date)}</div>
+    ${en.agenda ? `<p style="margin:8px 0 0"><strong>Agenda:</strong> ${esc(en.agenda)}</p>` : ""}
+    ${en.digest ? `<p style="margin:8px 0 0"><strong>Digest:</strong> ${esc(en.digest)}</p>` : ""}
+  </div>`)));
+  if (!entries || !entries.length) list.appendChild(el('<div class="empty">No entries yet.</div>'));
+  v.appendChild(list);
+}
+
+/* ========================= CALENDAR ========================= */
+async function renderCalendar() {
+  const { data: items, error } = await sb.from("calendar_items")
+    .select("*").eq("active", true).order("item_date", { nullsFirst: false });
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  (items || []).forEach(it => v.appendChild(el(`<div class="card2">
+    <h3>${esc(it.title)}</h3>
+    <div class="sub">${esc(it.category || "")}${it.who ? " · " + esc(it.who) : ""}
+      · ${it.recur ? "↻ " + esc(it.recur) : esc(it.item_date || "no date")}</div>
+    ${it.notes ? `<p style="font-size:13px;margin:8px 0 0">${esc(it.notes)}</p>` : ""}
+  </div>`)));
+  if (!items || !items.length) v.appendChild(el('<div class="empty">No calendar items yet.</div>'));
+
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld full">Title<input id="cTitle" type="text" placeholder="Daughter's swim"></label>
+    <label class="fld">Category<select id="cCat">
+      <option value="reminder">reminder</option><option value="birthday">birthday</option>
+      <option value="kids">kids</option><option value="family">family</option>
+      <option value="appointment">appointment</option></select></label>
+    <label class="fld">Who<input id="cWho" type="text" placeholder="daughter"></label>
+    <label class="fld">One-off date<input id="cDate" type="date"></label>
+    <label class="fld">Recur<input id="cRecur" type="text" placeholder="weekly:wed / yearly:03-14"></label>
+    <div class="full"><button id="cAdd">Add item</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  document.getElementById("cAdd").addEventListener("click", async () => {
+    const title = document.getElementById("cTitle").value.trim();
+    if (!title) return;
+    const { error } = await sb.from("calendar_items").insert({
+      title, category: document.getElementById("cCat").value,
+      who: document.getElementById("cWho").value.trim() || null,
+      item_date: document.getElementById("cDate").value || null,
+      recur: document.getElementById("cRecur").value.trim() || null });
+    if (error) return alert(error.message);
+    renderCalendar();
+  });
+}
+
+function showErr(error) {
+  view().innerHTML = `<div class="setup">Couldn't load data: ${esc(error.message)}<br><br>
+    If this says permission denied, make sure you ran <code>supabase/schema.sql</code> and are signed in.</div>`;
+}
+</script>
+</body>
+</html>
