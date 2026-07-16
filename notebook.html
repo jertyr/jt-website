@@ -107,10 +107,10 @@
   </header>
 
   <div class="tabs">
-    <button data-tab="people" class="active">People</button>
+    <button data-tab="tasks" class="active">Tasks</button>
+    <button data-tab="people">People</button>
     <button data-tab="meetings">Meetings</button>
     <button data-tab="calendar">Calendar</button>
-    <button data-tab="tasks">Tasks</button>
   </div>
 
   <div id="view"></div>
@@ -130,7 +130,7 @@ const SUPABASE_ANON = "sb_publishable_X5ORIPYRjJ2rql8cejljeA_Loipyqq7";
 
 const gate = document.getElementById("gate");
 const app  = document.getElementById("app");
-let sb = null, currentTab = "people";
+let sb = null, currentTab = "tasks";
 
 /* ---------- Boot ---------- */
 if (!SUPABASE_URL || !SUPABASE_ANON) {
