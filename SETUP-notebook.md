@@ -46,9 +46,12 @@ need them below:
 
 1. Left sidebar → **Authentication** → **Sign In / Providers** → make sure
    **Email** is enabled. Turn **Confirm email** on.
-2. **Authentication → URL Configuration** → add your site URL under **Redirect
-   URLs**: `https://jertyr.github.io/notebook.html` (and `http://localhost`
-   if you ever test locally).
+2. **Authentication → URL Configuration** → set **Site URL** to
+   `https://jertyr.github.io/jt-website/notebook.html` and add the same under
+   **Redirect URLs** (or `https://jertyr.github.io/jt-website/**` to cover the
+   whole site). Note the `/jt-website/` path — this repo is a GitHub Pages
+   *project* site, so it's served under that subpath, not the domain root. If
+   the URLs here don't match the page's real address, the magic link bounces.
 3. **Authentication → Users → Add user** → add yourself (`geraldatyrrell@gmail.com`).
    This is the only account that will be allowed in.
 
@@ -62,8 +65,8 @@ const SUPABASE_ANON = "eyJ...";                      // your anon/public key
 ```
 
 Commit that (or just send both values to Claude and it'll do it). Then visit
-`https://jertyr.github.io/notebook.html`, enter your email, click the magic link
-Supabase emails you, and you're in. It works the same on your phone.
+`https://jertyr.github.io/jt-website/notebook.html`, enter your email, click the
+magic link Supabase emails you, and you're in. It works the same on your phone.
 
 ## 6. Connect Claude to the notebook (the MCP connector)
 
