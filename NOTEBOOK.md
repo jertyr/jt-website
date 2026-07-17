@@ -22,7 +22,7 @@ consistent over time. If you (Claude) are reading this, follow it exactly.
 | `projects` | an ongoing project you keep a log on | Home Care, a renovation, an initiative |
 | `project_notes` | one dated log entry about a project | freeform running notes, read newest-first |
 | `meetings` | a recurring meeting definition | Leadership (2×/wk), Field Crew AM (biweekly Thu) |
-| `meeting_entries` | one occurrence of a meeting | pre-meeting agenda + post-meeting digest, per date |
+| `meeting_entries` | one dated note in a meeting's log | freeform running notes, newest-first (stacks) |
 | `calendar_items` | a personal calendar entry | birthdays, kids' activities, appointments, reminders |
 | `tasks` | a checklist / to-do item | migrated from `checklist.json`; `done`, `due`, `job`, `recur` |
 
@@ -62,11 +62,11 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
 
 ### `meetings` + `meeting_entries`
 - `meetings` holds the *definition* (name, cadence, participants). Rarely changes.
-- `meeting_entries` holds each occurrence. Before a meeting, create/append the
-  `agenda` (topics to raise). After, fill `digest` (what was decided / follow-ups)
-  and set `status = 'done'`.
-- One entry per (meeting, date) — enforced by a unique constraint. To add a topic
-  to an upcoming meeting, update that entry's `agenda`, don't make a second row.
+- `meeting_entries` is a **stacking, freeform notes log** — each save adds a new
+  `note` row (many allowed per day), read newest-first. Same idea as
+  `project_notes`; jot what was covered or decided.
+- One note per idea beats one giant blob — it keeps the timeline scannable, and
+  you can ask Claude to summarize a meeting's log any time.
 - Look up a meeting by `slug`: `leadership`, `field-crew-am`.
 
 ### `calendar_items` (PERSONAL only)

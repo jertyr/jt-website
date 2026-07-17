@@ -83,21 +83,18 @@ create trigger meetings_updated_at before update on meetings
   for each row execute function set_updated_at();
 
 -- =============================================================================
--- meeting_entries  — one row per occurrence of a meeting
--- agenda = pre-meeting topics/prep, digest = post-meeting recap
+-- meeting_entries  — a stacking, freeform notes log per meeting
+-- Each save is a new note (many allowed per day); read newest-first.
 -- =============================================================================
 create table if not exists meeting_entries (
   id          uuid primary key default gen_random_uuid(),
   meeting_id  uuid not null references meetings(id) on delete cascade,
-  entry_date  date not null,
-  status      text not null default 'upcoming', -- 'upcoming' | 'done'
-  agenda      text,                              -- pre-meeting notes / topics
-  digest      text,                              -- post-meeting summary / decisions
+  entry_date  date not null default current_date,
+  note        text,                              -- freeform note for that date
   created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
-  unique (meeting_id, entry_date)
+  updated_at  timestamptz not null default now()
 );
-create index if not exists meeting_entries_date_idx on meeting_entries(entry_date);
+create index if not exists meeting_entries_date_idx on meeting_entries(meeting_id, entry_date desc);
 
 drop trigger if exists meeting_entries_updated_at on meeting_entries;
 create trigger meeting_entries_updated_at before update on meeting_entries
