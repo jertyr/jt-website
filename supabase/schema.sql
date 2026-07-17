@@ -150,6 +150,39 @@ create trigger tasks_updated_at before update on tasks
   for each row execute function set_updated_at();
 
 -- =============================================================================
+-- projects  — one row per ongoing project you keep a running log on
+-- Rarely changes; click into one to read/add its notes.
+-- =============================================================================
+create table if not exists projects (
+  id          uuid primary key default gen_random_uuid(),
+  slug        text unique not null,             -- stable handle, e.g. 'home-care'
+  name        text not null,
+  status      text,                              -- freeform, e.g. 'active', 'on hold'
+  context     text,                              -- durable description / background
+  active      boolean not null default true,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+drop trigger if exists projects_updated_at on projects;
+create trigger projects_updated_at before update on projects
+  for each row execute function set_updated_at();
+
+-- =============================================================================
+-- project_notes  — intentionally unstructured, timestamped log tied to a project
+-- One project's log = all its notes ordered by note_date. Ask Claude to
+-- summarize a project any time and it reads across these rows.
+-- =============================================================================
+create table if not exists project_notes (
+  id          uuid primary key default gen_random_uuid(),
+  project_id  uuid not null references projects(id) on delete cascade,
+  note_date   date not null default current_date,
+  body        text not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists project_notes_project_idx on project_notes(project_id, note_date desc);
+
+-- =============================================================================
 -- Row-Level Security — private by default
 -- =============================================================================
 -- Enable RLS on every table, then allow full access ONLY to:
@@ -161,7 +194,7 @@ create trigger tasks_updated_at before update on tasks
 do $$
 declare t text;
 begin
-  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items','tasks']
+  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items','tasks','projects','project_notes']
   loop
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists "authenticated full access" on %I;', t);

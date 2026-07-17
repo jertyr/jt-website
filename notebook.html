@@ -109,6 +109,7 @@
   <div class="tabs">
     <button data-tab="tasks" class="active">Tasks</button>
     <button data-tab="people">People</button>
+    <button data-tab="projects">Projects</button>
     <button data-tab="meetings">Meetings</button>
     <button data-tab="calendar">Calendar</button>
   </div>
@@ -193,6 +194,7 @@ function today() { return new Date().toISOString().slice(0,10); }
 async function renderTab() {
   view().innerHTML = '<div class="empty">Loading…</div>';
   if (currentTab === "people") return renderPeople();
+  if (currentTab === "projects") return renderProjects();
   if (currentTab === "meetings") return renderMeetings();
   if (currentTab === "calendar") return renderCalendar();
   if (currentTab === "tasks") return renderTasks();
@@ -270,6 +272,76 @@ async function renderPersonFile(p) {
     if (error) return alert(error.message);
     renderPersonFile(p);
   });
+}
+
+/* ========================= PROJECTS ========================= */
+async function renderProjects() {
+  const { data: projects, error } = await sb.from("projects").select("*").eq("active", true).order("name");
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  (projects || []).forEach(p => {
+    const c = el(`<div class="card2 clickable">
+      <h3>${esc(p.name)}</h3>
+      <div class="sub">${esc(p.status || "")}${p.context ? (p.status ? " · " : "") + esc(p.context) : ""}</div>
+    </div>`);
+    c.addEventListener("click", () => renderProjectFile(p));
+    v.appendChild(c);
+  });
+  if (!projects || !projects.length) v.appendChild(el('<div class="empty">No projects yet.</div>'));
+
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld full">Project<input id="prjName" type="text" placeholder="Project name"></label>
+    <label class="fld full">Status (optional)<input id="prjStatus" type="text" placeholder="active"></label>
+    <div class="full"><button id="prjAdd">Add project</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  document.getElementById("prjAdd").addEventListener("click", async () => {
+    const name = document.getElementById("prjName").value.trim();
+    if (!name) return;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const { error } = await sb.from("projects").insert({
+      slug, name, status: document.getElementById("prjStatus").value.trim() || null });
+    if (error) return alert(error.message);
+    renderProjects();
+  });
+}
+
+async function renderProjectFile(p) {
+  const { data: notes, error } = await sb.from("project_notes")
+    .select("*").eq("project_id", p.id)
+    .order("note_date", { ascending: false }).order("created_at", { ascending: false });
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  const back = el('<a class="back" href="#">← All projects</a>');
+  back.addEventListener("click", e => { e.preventDefault(); renderProjects(); });
+  v.appendChild(back);
+  v.appendChild(el(`<div class="card2"><h3>${esc(p.name)}</h3>
+    <div class="sub">${esc(p.status || "")}</div>
+    ${p.context ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(p.context)}</p>` : ""}</div>`));
+
+  // Quick add box up top so jotting an entry is one tap; the log reads newest-first below.
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld">Date<input id="prjnDate" type="date" value="${today()}"></label>
+    <div></div>
+    <label class="fld full">Note<textarea id="prjnBody" placeholder="What happened / where things stand…"></textarea></label>
+    <div class="full"><button id="prjnAdd">Add note</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  document.getElementById("prjnAdd").addEventListener("click", async () => {
+    const body = document.getElementById("prjnBody").value.trim();
+    if (!body) return;
+    const { error } = await sb.from("project_notes").insert({
+      project_id: p.id, note_date: document.getElementById("prjnDate").value || today(), body });
+    if (error) return alert(error.message);
+    renderProjectFile(p);
+  });
+
+  const list = el('<div></div>');
+  (notes || []).forEach(n => list.appendChild(el(`<div class="note">
+    <div class="head"><span>${esc(n.note_date)}</span></div>
+    <div>${esc(n.body)}</div></div>`)));
+  if (!notes || !notes.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
+  v.appendChild(list);
 }
 
 /* ========================= MEETINGS ========================= */

@@ -19,6 +19,8 @@ consistent over time. If you (Claude) are reading this, follow it exactly.
 |---|---|---|
 | `people` | a person Jerry keeps a file on | identity/background: role, relationship, org, context |
 | `person_notes` | one dated note about a person | 1:1 notes, expectations, goals, observations |
+| `projects` | an ongoing project you keep a log on | Home Care, a renovation, an initiative |
+| `project_notes` | one dated log entry about a project | freeform running notes, read newest-first |
 | `meetings` | a recurring meeting definition | Leadership (2×/wk), Field Crew AM (biweekly Thu) |
 | `meeting_entries` | one occurrence of a meeting | pre-meeting agenda + post-meeting digest, per date |
 | `calendar_items` | a personal calendar entry | birthdays, kids' activities, appointments, reminders |
@@ -45,6 +47,18 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
   goals as their own rows so they're easy to revisit.
 - One note per idea — small rows are easier to review than one giant blob.
 - `note_date` = the day it happened (default today).
+
+### `projects` + `project_notes`
+- `projects` holds the *definition* (name, optional `status`/`context`). Rarely
+  changes. Click into one to read or add its log.
+- `project_notes` is an **intentionally unstructured, chronological log** — one
+  freeform entry per update, read newest-first. No `type`, no ceremony; jotting a
+  messy note is the point.
+- One note per update beats one giant blob — it keeps the timeline scannable.
+- **Summarize on demand:** ask Claude to summarize a project and it reads across
+  all its notes and gives you the current state of play.
+- `slug` is the stable handle (lowercase-dashed, e.g. `home-care`); set
+  `active = false` to archive instead of deleting.
 
 ### `meetings` + `meeting_entries`
 - `meetings` holds the *definition* (name, cadence, participants). Rarely changes.
