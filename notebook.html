@@ -294,15 +294,14 @@ async function renderMeetings() {
   const { data: entries, error: e2 } = await sb.from("meeting_entries")
     .select("*, meetings(name)").order("entry_date", { ascending: false });
   if (e2) return showErr(e2);
-  v.appendChild(el(`<div style="${groupH}">All entries — most recent first</div>`));
+  v.appendChild(el(`<div style="${groupH}">All notes — newest first</div>`));
   (entries || []).forEach(en => v.appendChild(el(`<div class="card2">
     <div class="sub" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <span class="badge" style="color:var(--accent)">${esc(en.meetings ? en.meetings.name : "")}</span>
-      <span class="badge">${esc(en.status)}</span>
       <span>${esc(en.entry_date)}</span>
     </div>
-    ${en.agenda ? `<p style="margin:8px 0 0"><strong>Agenda:</strong> ${esc(en.agenda)}</p>` : ""}
-    ${en.digest ? `<p style="margin:8px 0 0"><strong>Digest:</strong> ${esc(en.digest)}</p>` : ""}
+    ${en.agenda ? `<p style="margin:8px 0 0">${esc(en.agenda)}</p>` : ""}
+    ${en.digest ? `<p style="margin:8px 0 0">${esc(en.digest)}</p>` : ""}
   </div>`)));
   if (!entries || !entries.length) v.appendChild(el('<div class="empty">No meeting entries yet — add one above, or run today\'s update file.</div>'));
 }
@@ -351,18 +350,80 @@ async function renderMeeting(m) {
 }
 
 /* ========================= CALENDAR ========================= */
+// Local-midnight date from a yyyy-mm-dd string, and for "today".
+function calParseISO(d){ const [y,m,day] = d.split("-").map(Number); return new Date(y, m-1, day); }
+function calTodayDt(){ const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); }
+function calNextYearly(mon, day, todayDt){
+  let dt = new Date(todayDt.getFullYear(), mon-1, day);
+  if (dt < todayDt) dt = new Date(todayDt.getFullYear()+1, mon-1, day);
+  return dt;
+}
+// Date the item next lands on (>= today for recurring). null if it can't be dated.
+function calEffectiveDate(it, todayDt){
+  const dows = { sun:0, mon:1, tue:2, wed:3, thu:4, fri:5, sat:6 };
+  const r = (it.recur || "").trim().toLowerCase();
+  if (!r) return it.item_date ? calParseISO(it.item_date) : null;
+  let m;
+  if ((m = r.match(/^weekly:(\w{3})/))) {
+    const target = dows[m[1]];
+    if (target == null) return null;
+    const dt = new Date(todayDt);
+    dt.setDate(dt.getDate() + ((target - dt.getDay() + 7) % 7));
+    return dt;
+  }
+  if ((m = r.match(/^yearly:(\d{1,2})-(\d{1,2})$/))) return calNextYearly(+m[1], +m[2], todayDt);
+  if (r === "yearly" && it.item_date) { const b = calParseISO(it.item_date); return calNextYearly(b.getMonth()+1, b.getDate(), todayDt); }
+  if ((m = r.match(/^monthly:(\d{1,2})$/))) {
+    const day = +m[1];
+    const dt = new Date(todayDt.getFullYear(), todayDt.getMonth(), day);
+    if (dt < todayDt) dt.setMonth(dt.getMonth()+1);
+    return dt;
+  }
+  return null;
+}
+function calFmt(dt, todayDt){
+  return dt.toLocaleDateString(undefined, {
+    weekday:"short", month:"short", day:"numeric",
+    year: dt.getFullYear() !== todayDt.getFullYear() ? "numeric" : undefined
+  });
+}
+
 async function renderCalendar() {
-  const { data: items, error } = await sb.from("calendar_items")
-    .select("*").eq("active", true).order("item_date", { nullsFirst: false });
+  const { data: items, error } = await sb.from("calendar_items").select("*").eq("active", true);
   if (error) return showErr(error);
   const v = view(); v.innerHTML = "";
-  (items || []).forEach(it => v.appendChild(el(`<div class="card2">
+  const todayDt = calTodayDt();
+
+  // Resolve each item to its next/effective date; split datable from undated; sort chronologically.
+  const withDate = [], undated = [];
+  (items || []).forEach(it => {
+    const eff = calEffectiveDate(it, todayDt);
+    if (eff) withDate.push({ it, eff }); else undated.push(it);
+  });
+  withDate.sort((a, b) => a.eff - b.eff);
+
+  const card = (it, eff) => el(`<div class="card2">
     <h3>${esc(it.title)}</h3>
-    <div class="sub">${esc(it.category || "")}${it.who ? " · " + esc(it.who) : ""}
-      · ${it.recur ? "↻ " + esc(it.recur) : esc(it.item_date || "no date")}</div>
+    <div class="sub">${eff ? esc(calFmt(eff, todayDt)) : "no date"}${it.recur ? ` · ↻ ${esc(it.recur)}` : ""}${it.category ? " · " + esc(it.category) : ""}${it.who ? " · " + esc(it.who) : ""}</div>
     ${it.notes ? `<p style="font-size:13px;margin:8px 0 0">${esc(it.notes)}</p>` : ""}
-  </div>`)));
-  if (!items || !items.length) v.appendChild(el('<div class="empty">No calendar items yet.</div>'));
+  </div>`);
+
+  // Chronological list with a "Today" divider marking the current date, so past
+  // scrolls up and upcoming scrolls down from it.
+  const divider = () => el(`<div id="calToday" style="display:flex;align-items:center;gap:10px;margin:18px 0 8px;color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+    <span style="height:1px;flex:1;background:var(--accent);opacity:.5"></span>Today · ${esc(calFmt(todayDt, todayDt))}<span style="height:1px;flex:1;background:var(--accent);opacity:.5"></span></div>`);
+  let marker = null;
+  withDate.forEach(({ it, eff }) => {
+    if (!marker && eff >= todayDt) { marker = divider(); v.appendChild(marker); }
+    v.appendChild(card(it, eff));
+  });
+  if (!marker) { marker = divider(); v.appendChild(marker); }  // everything is in the past
+
+  if (undated.length) {
+    v.appendChild(el(`<div style="${groupH}">No date</div>`));
+    undated.forEach(it => v.appendChild(card(it, null)));
+  }
+  if (!withDate.length && !undated.length) v.appendChild(el('<div class="empty">No calendar items yet.</div>'));
 
   const add = el(`<div class="add-box"><div class="add-grid">
     <label class="fld full">Title<input id="cTitle" type="text" placeholder="Daughter's swim"></label>
@@ -387,6 +448,9 @@ async function renderCalendar() {
     if (error) return alert(error.message);
     renderCalendar();
   });
+
+  // Load positioned on the current date; scroll up for past, down for upcoming.
+  if (marker) requestAnimationFrame(() => marker.scrollIntoView({ block: "start" }));
 }
 
 /* ========================= TASKS ========================= */
