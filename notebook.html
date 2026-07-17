@@ -353,7 +353,7 @@ async function renderMeetings() {
   const v = view(); v.innerHTML = "";
 
   // Meeting definitions — click one to add/view its own entries
-  v.appendChild(el(`<div style="${groupH}">Meetings — tap to add an entry</div>`));
+  v.appendChild(el(`<div style="${groupH}">Meetings — tap to add a note</div>`));
   (meetings || []).forEach(m => {
     const c = el(`<div class="card2 clickable"><h3>${esc(m.name)}</h3>
       <div class="sub">${esc(m.cadence || "")}${m.day_of_week ? " · " + esc(m.day_of_week) : ""}${m.participants ? " · " + esc(m.participants) : ""}</div></div>`);
@@ -364,7 +364,8 @@ async function renderMeetings() {
 
   // Chronological feed of ALL entries across meetings (most recent first)
   const { data: entries, error: e2 } = await sb.from("meeting_entries")
-    .select("*, meetings(name)").order("entry_date", { ascending: false });
+    .select("*, meetings(name)")
+    .order("entry_date", { ascending: false }).order("created_at", { ascending: false });
   if (e2) return showErr(e2);
   v.appendChild(el(`<div style="${groupH}">All notes — newest first</div>`));
   (entries || []).forEach(en => v.appendChild(el(`<div class="card2">
@@ -372,15 +373,15 @@ async function renderMeetings() {
       <span class="badge" style="color:var(--accent)">${esc(en.meetings ? en.meetings.name : "")}</span>
       <span>${esc(en.entry_date)}</span>
     </div>
-    ${en.agenda ? `<p style="margin:8px 0 0">${esc(en.agenda)}</p>` : ""}
-    ${en.digest ? `<p style="margin:8px 0 0">${esc(en.digest)}</p>` : ""}
+    ${en.note ? `<p style="margin:8px 0 0">${esc(en.note)}</p>` : ""}
   </div>`)));
-  if (!entries || !entries.length) v.appendChild(el('<div class="empty">No meeting entries yet — add one above, or run today\'s update file.</div>'));
+  if (!entries || !entries.length) v.appendChild(el('<div class="empty">No meeting notes yet — tap a meeting above to add one.</div>'));
 }
 
 async function renderMeeting(m) {
   const { data: entries, error } = await sb.from("meeting_entries")
-    .select("*").eq("meeting_id", m.id).order("entry_date", { ascending: false });
+    .select("*").eq("meeting_id", m.id)
+    .order("entry_date", { ascending: false }).order("created_at", { ascending: false });
   if (error) return showErr(error);
   const v = view(); v.innerHTML = "";
   const back = el('<a class="back" href="#">← All meetings</a>');
@@ -390,34 +391,28 @@ async function renderMeeting(m) {
     <div class="sub">${esc(m.cadence || "")}${m.day_of_week ? " · " + esc(m.day_of_week) : ""}${m.participants ? " · " + esc(m.participants) : ""}</div>
     ${m.notes ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(m.notes)}</p>` : ""}</div>`));
 
+  // Quick add box up top; each save adds a new note. The log reads newest-first below.
   const add = el(`<div class="add-box"><div class="add-grid">
     <label class="fld">Date<input id="eDate" type="date" value="${today()}"></label>
     <div></div>
-    <label class="fld full">Agenda (pre-meeting topics)<textarea id="eAgenda"></textarea></label>
-    <label class="fld full">Digest (post-meeting recap)<textarea id="eDigest"></textarea></label>
-    <div class="full"><button id="eAdd">Save entry</button></div>
+    <label class="fld full">Note<textarea id="eNote" placeholder="What was covered / decided…"></textarea></label>
+    <div class="full"><button id="eAdd">Add note</button></div>
   </div></div>`);
   v.appendChild(add);
   document.getElementById("eAdd").addEventListener("click", async () => {
-    const entry_date = document.getElementById("eDate").value || today();
-    const agenda = document.getElementById("eAgenda").value.trim();
-    const digest = document.getElementById("eDigest").value.trim();
-    const status = digest ? "done" : "upcoming";
-    // upsert on (meeting_id, entry_date)
-    const { error } = await sb.from("meeting_entries")
-      .upsert({ meeting_id: m.id, entry_date, agenda: agenda || null, digest: digest || null, status },
-              { onConflict: "meeting_id,entry_date" });
+    const note = document.getElementById("eNote").value.trim();
+    if (!note) return;
+    const { error } = await sb.from("meeting_entries").insert({
+      meeting_id: m.id, entry_date: document.getElementById("eDate").value || today(), note });
     if (error) return alert(error.message);
     renderMeeting(m);
   });
 
   const list = el('<div></div>');
-  (entries || []).forEach(en => list.appendChild(el(`<div class="card2">
-    <div class="sub"><span class="badge">${esc(en.status)}</span> ${esc(en.entry_date)}</div>
-    ${en.agenda ? `<p style="margin:8px 0 0"><strong>Agenda:</strong> ${esc(en.agenda)}</p>` : ""}
-    ${en.digest ? `<p style="margin:8px 0 0"><strong>Digest:</strong> ${esc(en.digest)}</p>` : ""}
-  </div>`)));
-  if (!entries || !entries.length) list.appendChild(el('<div class="empty">No entries yet.</div>'));
+  (entries || []).forEach(en => list.appendChild(el(`<div class="note">
+    <div class="head"><span>${esc(en.entry_date)}</span></div>
+    <div>${esc(en.note)}</div></div>`)));
+  if (!entries || !entries.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
   v.appendChild(list);
 }
 
