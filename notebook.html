@@ -475,16 +475,25 @@ async function renderCalendar() {
     ${it.notes ? `<p style="font-size:13px;margin:8px 0 0">${esc(it.notes)}</p>` : ""}
   </div>`);
 
-  // Chronological list with a "Today" divider marking the current date, so past
-  // scrolls up and upcoming scrolls down from it.
-  const divider = () => el(`<div id="calToday" style="display:flex;align-items:center;gap:10px;margin:18px 0 8px;color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
-    <span style="height:1px;flex:1;background:var(--accent);opacity:.5"></span>Today · ${esc(calFmt(todayDt, todayDt))}<span style="height:1px;flex:1;background:var(--accent);opacity:.5"></span></div>`);
-  let marker = null;
-  withDate.forEach(({ it, eff }) => {
-    if (!marker && eff >= todayDt) { marker = divider(); v.appendChild(marker); }
-    v.appendChild(card(it, eff));
-  });
-  if (!marker) { marker = divider(); v.appendChild(marker); }  // everything is in the past
+  // The current date sits at the very top so the page loads on today; upcoming
+  // items follow, and past dates are tucked into a collapsible below.
+  const upcoming = withDate.filter(x => x.eff >= todayDt);
+  const past = withDate.filter(x => x.eff < todayDt).reverse(); // most-recent first
+
+  v.appendChild(el(`<div style="display:flex;align-items:center;gap:10px;margin:0 0 8px;color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.05em">
+    <span style="height:1px;flex:1;background:var(--accent);opacity:.5"></span>Today · ${esc(calFmt(todayDt, todayDt))}<span style="height:1px;flex:1;background:var(--accent);opacity:.5"></span></div>`));
+  upcoming.forEach(({ it, eff }) => v.appendChild(card(it, eff)));
+  if (!upcoming.length) v.appendChild(el('<div class="empty">Nothing upcoming.</div>'));
+
+  if (past.length) {
+    const details = document.createElement("details");
+    details.style.marginTop = "18px";
+    details.appendChild(el(`<summary style="cursor:pointer;color:var(--muted);font-size:13px;font-weight:600">Earlier (${past.length})</summary>`));
+    const pWrap = el('<div style="margin-top:10px"></div>');
+    past.forEach(({ it, eff }) => pWrap.appendChild(card(it, eff)));
+    details.appendChild(pWrap);
+    v.appendChild(details);
+  }
 
   if (undated.length) {
     v.appendChild(el(`<div style="${groupH}">No date</div>`));
@@ -516,8 +525,8 @@ async function renderCalendar() {
     renderCalendar();
   });
 
-  // Load positioned on the current date; scroll up for past, down for upcoming.
-  if (marker) requestAnimationFrame(() => marker.scrollIntoView({ block: "start" }));
+  // Load at the top so the current date is the first thing shown.
+  window.scrollTo(0, 0);
 }
 
 /* ========================= TASKS ========================= */
