@@ -213,6 +213,7 @@ create table if not exists recipe_ingredients (
   item        text not null,                      -- 'ground turkey'
   qty         text,                                -- '1 lb' (null = no amount given)
   sort        integer not null default 0,          -- display order within the recipe
+  inferred    boolean not null default false,      -- guessed, not from the source; see NOTEBOOK.md
   created_at  timestamptz not null default now()
 );
 create index if not exists recipe_ingredients_recipe_idx on recipe_ingredients(recipe_id, sort);

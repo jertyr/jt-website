@@ -96,6 +96,12 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
   parse it into a number or split off the unit.
 - Some hand-entered recipes carry the whole line in `item` with `qty` null
   (`1/2 c butter (soft)`). That's intentional — don't "fix" it by splitting.
+- **`inferred`** marks a line that was *guessed* (usually read off the recipe's
+  own instructions) rather than taken from the source. Anything you add that
+  Jerry didn't supply must be `inferred = true` — same idea as the red-flag
+  convention on the Remodelers Guide. The Recipes tab shows an amber `inferred`
+  tag next to those lines; once Jerry confirms one, set it back to `false` and
+  drop the matching sentence from the recipe's `notes`.
 - `source`: `ai` for recipes generated in the meal-planning app, `personal` for
   Jerry's own. The app shows an "AI generated" badge for `ai`.
 - `notes` is for caveats about the row itself (e.g. an ingredient list known to
