@@ -25,6 +25,8 @@ consistent over time. If you (Claude) are reading this, follow it exactly.
 | `meeting_entries` | one dated note in a meeting's log | freeform running notes, newest-first (stacks) |
 | `calendar_items` | a personal calendar entry | birthdays, kids' activities, appointments, reminders |
 | `tasks` | a checklist / to-do item | migrated from `checklist.json`; `done`, `due`, `job`, `recur` |
+| `recipes` | one recipe | title, description, servings, ordered `instructions[]` |
+| `recipe_ingredients` | one ingredient line on a recipe | `item` + `qty`, ordered by `sort` |
 
 Everything is private (Row-Level Security). Anonymous users see nothing.
 
@@ -81,6 +83,30 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
   - `monthly:DD` — every month on that day-of-month
 - `reminder_lead_days` = how many days ahead the digest should surface it.
 - `category`: `birthday` | `kids` | `family` | `appointment` | `reminder`.
+
+### `recipes` + `recipe_ingredients`
+- `recipes` holds the whole recipe except the shopping list: `title`, one-line
+  `description`, `servings`, and `instructions` — a **`text[]` of ordered steps**,
+  one element per numbered step. Append a step by writing the whole array back.
+- `recipe_ingredients` is one row per ingredient line, ordered by `sort`.
+  Split it as the source does: `item` = what to buy (`ground turkey`), `qty` =
+  how much (`1 lb`). A null `qty` is normal — plenty of lines have no amount.
+- **`qty` is TEXT and must stay text.** Real values are `1 can (14–15 oz)`,
+  `2–3 tbsp`, `1 medium, chopped`, `1, thinly sliced (optional)`. Never try to
+  parse it into a number or split off the unit.
+- Some hand-entered recipes carry the whole line in `item` with `qty` null
+  (`1/2 c butter (soft)`). That's intentional — don't "fix" it by splitting.
+- `source`: `ai` for recipes generated in the meal-planning app, `personal` for
+  Jerry's own. The app shows an "AI generated" badge for `ai`.
+- `notes` is for caveats about the row itself (e.g. an ingredient list known to
+  be incomplete). It renders in amber on the recipe page, so keep it short and
+  actionable.
+- `slug` is the stable handle (lowercase-dashed, e.g. `turkey-chili`); set
+  `active = false` to archive instead of deleting.
+- **Finding recipes by ingredient** is the main query worth knowing:
+  `select r.title from recipes r join recipe_ingredients i on i.recipe_id = r.id
+  where i.item ilike '%cilantro%'`. The Recipes tab's search box does the same
+  thing across title and ingredients.
 
 ---
 
