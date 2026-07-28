@@ -180,6 +180,44 @@ create table if not exists project_notes (
 create index if not exists project_notes_project_idx on project_notes(project_id, note_date desc);
 
 -- =============================================================================
+-- recipes  — one row per recipe
+-- Ordered steps live in instructions[]; the shopping-list detail (what and how
+-- much) lives in recipe_ingredients so ingredients stay queryable across recipes.
+-- =============================================================================
+create table if not exists recipes (
+  id            uuid primary key default gen_random_uuid(),
+  slug          text unique not null,            -- 'turkey-chili'
+  title         text not null,
+  description   text,                             -- one-line summary
+  servings      integer,
+  instructions  text[] not null default '{}',     -- ordered steps, one per element
+  source        text,                             -- 'ai' | 'personal'
+  notes         text,                             -- freeform, e.g. tweaks that worked
+  active        boolean not null default true,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+drop trigger if exists recipes_updated_at on recipes;
+create trigger recipes_updated_at before update on recipes
+  for each row execute function set_updated_at();
+
+-- =============================================================================
+-- recipe_ingredients  — one row per ingredient line on a recipe
+-- qty is TEXT on purpose: real lines are '1 can (14–15 oz)', '2–3 tbsp',
+-- '1 medium, chopped'. Never try to make it numeric.
+-- =============================================================================
+create table if not exists recipe_ingredients (
+  id          uuid primary key default gen_random_uuid(),
+  recipe_id   uuid not null references recipes(id) on delete cascade,
+  item        text not null,                      -- 'ground turkey'
+  qty         text,                                -- '1 lb' (null = no amount given)
+  sort        integer not null default 0,          -- display order within the recipe
+  created_at  timestamptz not null default now()
+);
+create index if not exists recipe_ingredients_recipe_idx on recipe_ingredients(recipe_id, sort);
+
+-- =============================================================================
 -- Row-Level Security — private by default
 -- =============================================================================
 -- Enable RLS on every table, then allow full access ONLY to:
@@ -191,7 +229,7 @@ create index if not exists project_notes_project_idx on project_notes(project_id
 do $$
 declare t text;
 begin
-  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items','tasks','projects','project_notes']
+  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items','tasks','projects','project_notes','recipes','recipe_ingredients']
   loop
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists "authenticated full access" on %I;', t);

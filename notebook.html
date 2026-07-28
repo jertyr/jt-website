@@ -79,6 +79,17 @@
   .add-grid { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: end; }
   .add-grid .full { grid-column: 1 / -1; }
   @media (max-width: 600px){ .add-grid { grid-template-columns: 1fr; } }
+  /* ---- Recipes ---- */
+  .search { width: 100%; margin-bottom: 12px; }
+  .ing { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0;
+    border-bottom: 1px dashed var(--line); font-size: 13.5px; }
+  .ing:last-child { border-bottom: none; }
+  .ing .qty { color: var(--muted); white-space: nowrap; text-align: right; }
+  .step { display: flex; gap: 10px; margin: 10px 0; font-size: 13.5px; }
+  .step .n { flex: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--accent);
+    font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+
   .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
   .setup { background: var(--panel); border: 1px solid var(--amber); border-radius: 10px; padding: 16px;
     color: var(--text); font-size: 13.5px; }
@@ -112,6 +123,7 @@
     <button data-tab="projects">Projects</button>
     <button data-tab="meetings">Meetings</button>
     <button data-tab="calendar">Calendar</button>
+    <button data-tab="recipes">Recipes</button>
   </div>
 
   <div id="view"></div>
@@ -198,6 +210,7 @@ async function renderTab() {
   if (currentTab === "meetings") return renderMeetings();
   if (currentTab === "calendar") return renderCalendar();
   if (currentTab === "tasks") return renderTasks();
+  if (currentTab === "recipes") return renderRecipes();
 }
 
 /* ========================= PEOPLE ========================= */
@@ -603,6 +616,125 @@ function taskRow(t) {
   });
   row.append(cb, body, del);
   return row;
+}
+
+/* ========================= RECIPES ========================= */
+async function renderRecipes() {
+  // Ingredients come along so the search box can match on them too ("what uses cilantro?").
+  const { data: recipes, error } = await sb.from("recipes")
+    .select("*, recipe_ingredients(item)").eq("active", true).order("title");
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+
+  const search = el('<input class="search" type="text" placeholder="Search title or ingredient — e.g. cilantro">');
+  const list = el('<div></div>');
+  v.append(search, list);
+
+  // Filter in place rather than re-rendering, so the caret stays put while typing.
+  function draw() {
+    const term = search.value.trim().toLowerCase();
+    list.innerHTML = "";
+    const matches = (recipes || []).filter(r =>
+      !term || r.title.toLowerCase().includes(term)
+            || (r.recipe_ingredients || []).some(i => i.item.toLowerCase().includes(term)));
+    matches.forEach(r => {
+      const bits = [];
+      if (r.servings) bits.push(r.servings + " servings");
+      if (r.description) bits.push(r.description);
+      const c = el(`<div class="card2 clickable">
+        <h3>${esc(r.title)}</h3>
+        <div class="sub">${esc(bits.join(" · "))}</div>
+      </div>`);
+      c.addEventListener("click", () => renderRecipe(r));
+      list.appendChild(c);
+    });
+    if (!matches.length) list.appendChild(el(
+      `<div class="empty">${term ? "No recipes match that." : "No recipes yet."}</div>`));
+  }
+  search.addEventListener("input", draw);
+  draw();
+
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld full">Recipe<input id="rcpTitle" type="text" placeholder="Recipe name"></label>
+    <label class="fld">Servings<input id="rcpServ" type="text" placeholder="4"></label>
+    <label class="fld">Description<input id="rcpDesc" type="text" placeholder="One line"></label>
+    <div class="full"><button id="rcpAdd">Add recipe</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  document.getElementById("rcpAdd").addEventListener("click", async () => {
+    const title = document.getElementById("rcpTitle").value.trim();
+    if (!title) return;
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const serv = parseInt(document.getElementById("rcpServ").value.trim(), 10);
+    const { error } = await sb.from("recipes").insert({
+      slug, title, servings: isNaN(serv) ? null : serv,
+      description: document.getElementById("rcpDesc").value.trim() || null,
+      source: "personal" });
+    if (error) return alert(error.message);
+    renderRecipes();
+  });
+}
+
+async function renderRecipe(r) {
+  const { data: ings, error } = await sb.from("recipe_ingredients")
+    .select("*").eq("recipe_id", r.id).order("sort").order("created_at");
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+  const back = el('<a class="back" href="#">← All recipes</a>');
+  back.addEventListener("click", e => { e.preventDefault(); renderRecipes(); });
+  v.appendChild(back);
+
+  const steps = r.instructions || [];
+  const meta = [];
+  if (r.servings) meta.push(esc(r.servings + " servings"));
+  if (r.source === "ai") meta.push('<span class="badge">AI generated</span>');
+  v.appendChild(el(`<div class="card2">
+    <h3>${esc(r.title)}</h3>
+    <div class="sub">${meta.join(" · ")}</div>
+    ${r.description ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(r.description)}</p>` : ""}
+    ${r.notes ? `<p style="font-size:12.5px;color:var(--amber);margin:8px 0 0">${esc(r.notes)}</p>` : ""}
+  </div>`));
+
+  const stepCard = el('<div class="card2"><h3>Instructions</h3></div>');
+  if (steps.length) steps.forEach((s, i) => stepCard.appendChild(el(
+    `<div class="step"><div class="n">${i + 1}</div><div>${esc(s)}</div></div>`)));
+  else stepCard.appendChild(el('<div class="empty">No instructions yet.</div>'));
+  v.appendChild(stepCard);
+
+  const ingCard = el('<div class="card2"><h3>Ingredients</h3></div>');
+  (ings || []).forEach(i => ingCard.appendChild(el(
+    `<div class="ing"><span>${esc(i.item)}</span><span class="qty">${esc(i.qty || "")}</span></div>`)));
+  if (!ings || !ings.length) ingCard.appendChild(el('<div class="empty">No ingredients yet.</div>'));
+  v.appendChild(ingCard);
+
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld">Ingredient<input id="ingItem" type="text" placeholder="ground turkey"></label>
+    <label class="fld">Amount<input id="ingQty" type="text" placeholder="1 lb"></label>
+    <div class="full"><button id="ingAdd">Add ingredient</button></div>
+    <label class="fld full">Step<textarea id="stepBody" placeholder="Next instruction step…"></textarea></label>
+    <div class="full"><button id="stepAdd" class="secondary">Add step</button></div>
+  </div></div>`);
+  v.appendChild(add);
+
+  document.getElementById("ingAdd").addEventListener("click", async () => {
+    const item = document.getElementById("ingItem").value.trim();
+    if (!item) return;
+    const nextSort = (ings || []).reduce((m, i) => Math.max(m, i.sort || 0), 0) + 1;
+    const { error } = await sb.from("recipe_ingredients").insert({
+      recipe_id: r.id, item,
+      qty: document.getElementById("ingQty").value.trim() || null, sort: nextSort });
+    if (error) return alert(error.message);
+    renderRecipe(r);
+  });
+  document.getElementById("stepAdd").addEventListener("click", async () => {
+    const body = document.getElementById("stepBody").value.trim();
+    if (!body) return;
+    const next = steps.concat([body]);
+    const { error } = await sb.from("recipes").update({ instructions: next }).eq("id", r.id);
+    if (error) return alert(error.message);
+    r.instructions = next;   // keep the in-memory copy in step with the row we just wrote
+    renderRecipe(r);
+  });
 }
 
 function showErr(error) {
