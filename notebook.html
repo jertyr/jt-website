@@ -91,6 +91,17 @@
     color: var(--amber); border: 1px solid var(--amber); border-radius: 20px;
     padding: 0 5px; margin-left: 7px; vertical-align: 1px; }
   .step { display: flex; gap: 10px; margin: 10px 0; font-size: 13.5px; }
+  /* ---- Tasks ---- */
+  .task-title { font-size: 15px; cursor: pointer; display: inline-block;
+    border-bottom: 1px dashed transparent; }
+  .task-title:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .task-preview { color: var(--muted); font-size: 12.5px; margin-top: 3px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .edit-grid .full { grid-column: 1 / -1; }
+  .edit-grid input, .edit-grid textarea { width: 100%; }
+  @media (max-width: 600px){ .edit-grid { grid-template-columns: 1fr; } }
+
   .step .n { flex: none; width: 22px; height: 22px; border-radius: 50%;
     background: var(--panel-2); border: 1px solid var(--line); color: var(--accent);
     font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
@@ -593,6 +604,75 @@ async function renderTasks() {
   }
 }
 
+/* One task's own card — the heading in the list opens this. Everything is a
+   live field, so there's no separate "edit" mode to enter. */
+async function renderTask(t) {
+  const v = view(); v.innerHTML = "";
+  const back = el('<a class="back" href="#">← All tasks</a>');
+  back.addEventListener("click", e => { e.preventDefault(); renderTasks(); });
+  v.appendChild(back);
+
+  const card = el(`<div class="card2"><div class="edit-grid">
+    <label class="fld full">Task<input id="teTitle" type="text" value="${esc(t.title)}"></label>
+    <label class="fld full">Description<textarea id="teDesc" style="min-height:120px"
+      placeholder="The longer version — context, links, what done looks like…">${esc(t.description || "")}</textarea></label>
+    <label class="fld">Job<input id="teJob" type="text" value="${esc(t.job || "")}" placeholder="Client / Personal"></label>
+    <label class="fld">Due<input id="teDue" type="date" value="${esc(t.due || "")}"></label>
+    <label class="fld">Repeats<input id="teRecur" type="text" value="${esc(t.recur || "")}" placeholder="biweekly"></label>
+    <div></div>
+    <div class="full row">
+      <button id="teSave">Save</button>
+      <button id="teDone" class="secondary">${t.done ? "Reopen" : "Mark done"}</button>
+      <div class="spacer"></div>
+      <span class="msg muted" id="teMsg"></span>
+      <button id="teDel" class="ghost" title="Delete">✕</button>
+    </div>
+  </div></div>`);
+  v.appendChild(card);
+
+  const meta = [];
+  if (t.created) meta.push("added " + t.created);
+  if (t.done && t.completed) meta.push("done " + t.completed);
+  if (meta.length) v.appendChild(el(`<div class="sub" style="margin-top:10px">${esc(meta.join(" · "))}</div>`));
+
+  const save = async () => {
+    const title = document.getElementById("teTitle").value.trim();
+    if (!title) return;
+    const patch = {
+      title,
+      description: document.getElementById("teDesc").value.trim() || null,
+      job: document.getElementById("teJob").value.trim() || null,
+      due: document.getElementById("teDue").value || null,
+      recur: document.getElementById("teRecur").value.trim() || null,
+    };
+    const { error } = await sb.from("tasks").update(patch).eq("id", t.id);
+    if (error) return alert(error.message);
+    Object.assign(t, patch);   // keep the local copy in step with the row we just wrote
+    const msg = document.getElementById("teMsg");
+    msg.className = "msg ok"; msg.textContent = "Saved";
+    setTimeout(() => { msg.textContent = ""; }, 1500);
+  };
+  document.getElementById("teSave").addEventListener("click", save);
+  // Enter in a single-line field saves; in the description use Cmd/Ctrl+Enter.
+  card.querySelectorAll('input').forEach(i =>
+    i.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } }));
+  document.getElementById("teDesc").addEventListener("keydown", e => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); save(); } });
+
+  document.getElementById("teDone").addEventListener("click", async () => {
+    const { error } = await sb.from("tasks").update({
+      done: !t.done, completed: !t.done ? today() : null }).eq("id", t.id);
+    if (error) return alert(error.message);
+    renderTasks();
+  });
+  document.getElementById("teDel").addEventListener("click", async () => {
+    if (!confirm("Delete this task?")) return;
+    const { error } = await sb.from("tasks").delete().eq("id", t.id);
+    if (error) return alert(error.message);
+    renderTasks();
+  });
+}
+
 function taskRow(t) {
   const row = el(`<div class="card2" style="display:flex;align-items:flex-start;gap:10px;${t.done ? "opacity:.6" : ""}"></div>`);
   const cb = document.createElement("input");
@@ -604,7 +684,8 @@ function taskRow(t) {
     renderTasks();
   });
   const body = el(`<div style="flex:1;min-width:0">
-    <div style="font-size:15px;${t.done ? "text-decoration:line-through" : ""}">${esc(t.title)}</div>
+    <div class="task-title" style="${t.done ? "text-decoration:line-through" : ""}">${esc(t.title)}</div>
+    ${t.description ? `<div class="task-preview">${esc(t.description)}</div>` : ""}
     <div class="sub" style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap">
       ${t.job ? `<span class="badge">${esc(t.job)}</span>` : ""}
       ${t.due ? `<span class="badge" style="color:var(--accent)">due ${esc(t.due)}</span>` : ""}
@@ -612,6 +693,8 @@ function taskRow(t) {
       ${t.done && t.completed ? `<span class="badge">done ${esc(t.completed)}</span>` : ""}
     </div>
   </div>`);
+  // Tapping the heading opens the task's own card, where everything is editable.
+  body.querySelector(".task-title").addEventListener("click", () => renderTask(t));
   const del = el('<button class="ghost" title="Delete" style="font-size:16px">✕</button>');
   del.addEventListener("click", async () => {
     if (!confirm("Delete this task?")) return;

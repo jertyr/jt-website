@@ -131,6 +131,7 @@ create table if not exists tasks (
   id          uuid primary key default gen_random_uuid(),
   legacy_id   int unique,                       -- original checklist.json id (for the one-time migration)
   title       text not null,
+  description text,                              -- longer detail; edited on the task's own card
   job         text,                              -- grouping: 'Personal', a client/job name, etc.
   done        boolean not null default false,
   due         date,
