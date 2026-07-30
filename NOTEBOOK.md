@@ -132,6 +132,11 @@ Google Calendar connector.
 - Migrated from the old `checklist.json`. `job` is the grouping (a client/job
   name or `Personal`); `done` + `completed` track state; `due`/`created` are
   dates; `recur` is freeform (e.g. `biweekly`).
+- `title` is the one-line version that shows in the list. `description` is the
+  longer detail — context, links, what "done" actually looks like. Keep the
+  title scannable and put anything that needs explaining in `description`.
+- Tapping a task's heading in the app opens its own card, where every field is
+  directly editable. The first two lines of `description` preview in the list.
 - `legacy_id` maps back to the original checklist id — only meaningful for the
   one-time migration; new tasks leave it null.
 
