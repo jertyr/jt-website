@@ -92,9 +92,10 @@
     padding: 0 5px; margin-left: 7px; vertical-align: 1px; }
   .step { display: flex; gap: 10px; margin: 10px 0; font-size: 13.5px; }
   /* ---- Tasks ---- */
-  .task-title { font-size: 15px; cursor: pointer; display: inline-block;
+  .task-title, .edit-head { font-size: 15px; cursor: pointer; display: inline-block;
     border-bottom: 1px dashed transparent; }
-  .task-title:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .task-title:hover, .edit-head:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .note .head button { padding: 0 4px; font-size: 11.5px; }
   .task-preview { color: var(--muted); font-size: 12.5px; margin-top: 3px;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -271,16 +272,121 @@ async function renderPersonFile(p) {
   const back = el('<a class="back" href="#">← All people</a>');
   back.addEventListener("click", e => { e.preventDefault(); renderPeople(); });
   v.appendChild(back);
-  v.appendChild(el(`<div class="card2"><h3>${esc(p.name)}</h3>
-    <div class="sub">${esc(p.role || "")}${p.relationship ? " · " + esc(p.relationship) : ""}${p.org ? " · " + esc(p.org) : ""}</div>
-    ${p.context ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(p.context)}</p>` : ""}</div>`));
+  /* ---- Profile: reads as plain text, swaps to live fields on Edit (or a tap
+     on the name), the same way a task heading opens its card. ---- */
+  const profile = el('<div class="card2"></div>');
+  v.appendChild(profile);
 
+  function profileRead() {
+    profile.innerHTML = "";
+    const sub = [p.role, p.relationship, p.org].filter(Boolean).map(esc).join(" · ");
+    profile.appendChild(el(`<div class="row">
+      <h3 class="edit-head" style="margin:0;flex:1">${esc(p.name)}</h3>
+      <button class="ghost" id="pEdit">Edit</button>
+    </div>`));
+    if (sub) profile.appendChild(el(`<div class="sub">${sub}</div>`));
+    if (p.context) profile.appendChild(el(`<p style="font-size:13.5px;margin:10px 0 0">${esc(p.context)}</p>`));
+    profile.querySelector("#pEdit").addEventListener("click", profileEdit);
+    profile.querySelector(".edit-head").addEventListener("click", profileEdit);
+  }
+
+  function profileEdit() {
+    profile.innerHTML = "";
+    profile.appendChild(el(`<div class="edit-grid">
+      <label class="fld full">Name<input id="peName" type="text" value="${esc(p.name)}"></label>
+      <label class="fld">Role<input id="peRole" type="text" value="${esc(p.role || "")}" placeholder="Runner"></label>
+      <label class="fld">Relationship<input id="peRel" type="text" value="${esc(p.relationship || "")}" placeholder="Direct report"></label>
+      <label class="fld full">Org<input id="peOrg" type="text" value="${esc(p.org || "")}" placeholder="Dexter Builders"></label>
+      <label class="fld full">Background<textarea id="peCtx" style="min-height:110px"
+        placeholder="Who they are and history — anything dated belongs in a note instead">${esc(p.context || "")}</textarea></label>
+      <div class="full row">
+        <button id="peSave">Save</button>
+        <button id="peCancel" class="secondary">Cancel</button>
+      </div>
+    </div>`));
+    profile.querySelector("#peCancel").addEventListener("click", profileRead);
+    profile.querySelector("#peSave").addEventListener("click", async () => {
+      const name = document.getElementById("peName").value.trim();
+      if (!name) return;
+      const patch = {
+        name,
+        role: document.getElementById("peRole").value.trim() || null,
+        relationship: document.getElementById("peRel").value.trim() || null,
+        org: document.getElementById("peOrg").value.trim() || null,
+        context: document.getElementById("peCtx").value.trim() || null,
+      };
+      const { error } = await sb.from("people").update(patch).eq("id", p.id);
+      if (error) return alert(error.message);
+      Object.assign(p, patch);   // keep the local copy in step with the row we just wrote
+      profileRead();
+    });
+  }
+  profileRead();
+
+  /* ---- Notes: each one can be edited or deleted in place ---- */
   const list = el('<div></div>');
-  (notes || []).forEach(n => list.appendChild(el(`<div class="note">
-    <div class="head"><span class="badge type-${esc(n.type)}">${esc(n.type)}</span><span>${esc(n.note_date)}</span></div>
-    <div>${esc(n.body)}</div></div>`)));
-  if (!notes || !notes.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
   v.appendChild(list);
+
+  function drawNotes() {
+    // Re-sort in case an edit moved a note's date.
+    (notes || []).sort((a, b) => a.note_date < b.note_date ? 1 : a.note_date > b.note_date ? -1 : 0);
+    list.innerHTML = "";
+    (notes || []).forEach(n => list.appendChild(noteEl(n)));
+    if (!notes || !notes.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
+  }
+
+  function noteEl(n) {
+    const wrap = el('<div class="note"></div>');
+    function read() {
+      wrap.innerHTML = "";
+      wrap.appendChild(el(`<div class="head">
+        <span class="badge type-${esc(n.type)}">${esc(n.type)}</span>
+        <span>${esc(n.note_date)}</span>
+        <span style="flex:1"></span>
+        <button class="ghost note-edit">Edit</button>
+      </div>`));
+      wrap.appendChild(el(`<div>${esc(n.body)}</div>`));
+      wrap.querySelector(".note-edit").addEventListener("click", edit);
+    }
+    function edit() {
+      wrap.innerHTML = "";
+      wrap.appendChild(el(`<div class="edit-grid">
+        <label class="fld">Type<select class="neType">${
+          ["1:1", "note", "goal", "expectation", "observation"].map(t =>
+            `<option value="${t}"${t === n.type ? " selected" : ""}>${t}</option>`).join("")
+        }</select></label>
+        <label class="fld">Date<input class="neDate" type="date" value="${esc(n.note_date)}"></label>
+        <label class="fld full">Note<textarea class="neBody" style="min-height:90px">${esc(n.body)}</textarea></label>
+        <div class="full row">
+          <button class="neSave">Save</button>
+          <button class="neCancel secondary">Cancel</button>
+          <div class="spacer"></div>
+          <button class="neDel ghost" title="Delete">✕</button>
+        </div>
+      </div>`));
+      wrap.querySelector(".neCancel").addEventListener("click", read);
+      wrap.querySelector(".neSave").addEventListener("click", async () => {
+        const body = wrap.querySelector(".neBody").value.trim();
+        if (!body) return;
+        const patch = { body, type: wrap.querySelector(".neType").value,
+          note_date: wrap.querySelector(".neDate").value || n.note_date };
+        const { error } = await sb.from("person_notes").update(patch).eq("id", n.id);
+        if (error) return alert(error.message);
+        Object.assign(n, patch);
+        drawNotes();   // redraw the whole log in case the date changed its place
+      });
+      wrap.querySelector(".neDel").addEventListener("click", async () => {
+        if (!confirm("Delete this note?")) return;
+        const { error } = await sb.from("person_notes").delete().eq("id", n.id);
+        if (error) return alert(error.message);
+        const i = notes.indexOf(n); if (i > -1) notes.splice(i, 1);
+        drawNotes();
+      });
+    }
+    read();
+    return wrap;
+  }
+  drawNotes();
 
   const add = el(`<div class="add-box"><div class="add-grid">
     <label class="fld">Type<select id="nType">

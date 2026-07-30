@@ -40,6 +40,8 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
 - Put durable background in `context` (who they are, history). Put anything
   **dated** in `person_notes`, not here.
 - Set `active = false` instead of deleting when someone leaves.
+- In the app, tapping a person's name on their file (or the Edit button) swaps
+  the profile to live fields — name, role, relationship, org, background.
 
 ### `person_notes`
 - **A person's file** = `select * from person_notes where person_id = (select id
@@ -49,6 +51,8 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
   goals as their own rows so they're easy to revisit.
 - One note per idea — small rows are easier to review than one giant blob.
 - `note_date` = the day it happened (default today).
+- Notes are editable in place: each one has an Edit link that opens its type,
+  date, and body, plus a delete. Changing a note's date re-sorts the log.
 
 ### `projects` + `project_notes`
 - `projects` holds the *definition* (name, optional `status`/`context`). Rarely
