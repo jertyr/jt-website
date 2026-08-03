@@ -232,13 +232,18 @@ async function renderTab() {
 
 /* ========================= PEOPLE ========================= */
 async function renderPeople() {
-  const { data: people, error } = await sb.from("people").select("*").eq("active", true).order("name");
+  // Newest note comes along as the list subtitle — everything about a person
+  // lives in their notes now, so that's the only useful thing to show here.
+  const { data: people, error } = await sb.from("people")
+    .select("*, person_notes(body, note_date)").eq("active", true).order("name");
   if (error) return showErr(error);
   const v = view(); v.innerHTML = "";
   (people || []).forEach(p => {
+    const latest = (p.person_notes || []).slice()
+      .sort((a, b) => a.note_date < b.note_date ? 1 : a.note_date > b.note_date ? -1 : 0)[0];
     const c = el(`<div class="card2 clickable">
       <h3>${esc(p.name)}</h3>
-      <div class="sub">${esc(p.role || "")}${p.relationship ? " · " + esc(p.relationship) : ""}</div>
+      ${latest ? `<div class="task-preview">${esc(latest.body)}</div>` : ""}
     </div>`);
     c.addEventListener("click", () => renderPersonFile(p));
     v.appendChild(c);
@@ -247,8 +252,6 @@ async function renderPeople() {
 
   const add = el(`<div class="add-box"><div class="add-grid">
     <label class="fld full">Name<input id="pName" type="text" placeholder="Full name"></label>
-    <label class="fld">Role<input id="pRole" type="text" placeholder="Runner"></label>
-    <label class="fld">Relationship<input id="pRel" type="text" placeholder="Direct report"></label>
     <div class="full"><button id="pAdd">Add person</button></div>
   </div></div>`);
   v.appendChild(add);
@@ -256,9 +259,7 @@ async function renderPeople() {
     const name = document.getElementById("pName").value.trim();
     if (!name) return;
     const slug = name.toLowerCase().split(/\s+/)[0].replace(/[^a-z0-9]/g, "");
-    const { error } = await sb.from("people").insert({
-      slug, name, role: document.getElementById("pRole").value.trim() || null,
-      relationship: document.getElementById("pRel").value.trim() || null });
+    const { error } = await sb.from("people").insert({ slug, name });
     if (error) return alert(error.message);
     renderPeople();
   });
@@ -279,13 +280,10 @@ async function renderPersonFile(p) {
 
   function profileRead() {
     profile.innerHTML = "";
-    const sub = [p.role, p.relationship, p.org].filter(Boolean).map(esc).join(" · ");
     profile.appendChild(el(`<div class="row">
       <h3 class="edit-head" style="margin:0;flex:1">${esc(p.name)}</h3>
-      <button class="ghost" id="pEdit">Edit</button>
+      <button class="ghost" id="pEdit">Rename</button>
     </div>`));
-    if (sub) profile.appendChild(el(`<div class="sub">${sub}</div>`));
-    if (p.context) profile.appendChild(el(`<p style="font-size:13.5px;margin:10px 0 0">${esc(p.context)}</p>`));
     profile.querySelector("#pEdit").addEventListener("click", profileEdit);
     profile.querySelector(".edit-head").addEventListener("click", profileEdit);
   }
@@ -294,11 +292,6 @@ async function renderPersonFile(p) {
     profile.innerHTML = "";
     profile.appendChild(el(`<div class="edit-grid">
       <label class="fld full">Name<input id="peName" type="text" value="${esc(p.name)}"></label>
-      <label class="fld">Role<input id="peRole" type="text" value="${esc(p.role || "")}" placeholder="Runner"></label>
-      <label class="fld">Relationship<input id="peRel" type="text" value="${esc(p.relationship || "")}" placeholder="Direct report"></label>
-      <label class="fld full">Org<input id="peOrg" type="text" value="${esc(p.org || "")}" placeholder="Dexter Builders"></label>
-      <label class="fld full">Background<textarea id="peCtx" style="min-height:110px"
-        placeholder="Who they are and history — anything dated belongs in a note instead">${esc(p.context || "")}</textarea></label>
       <div class="full row">
         <button id="peSave">Save</button>
         <button id="peCancel" class="secondary">Cancel</button>
@@ -308,18 +301,13 @@ async function renderPersonFile(p) {
     profile.querySelector("#peSave").addEventListener("click", async () => {
       const name = document.getElementById("peName").value.trim();
       if (!name) return;
-      const patch = {
-        name,
-        role: document.getElementById("peRole").value.trim() || null,
-        relationship: document.getElementById("peRel").value.trim() || null,
-        org: document.getElementById("peOrg").value.trim() || null,
-        context: document.getElementById("peCtx").value.trim() || null,
-      };
-      const { error } = await sb.from("people").update(patch).eq("id", p.id);
+      const { error } = await sb.from("people").update({ name }).eq("id", p.id);
       if (error) return alert(error.message);
-      Object.assign(p, patch);   // keep the local copy in step with the row we just wrote
+      p.name = name;   // keep the local copy in step with the row we just wrote
       profileRead();
     });
+    document.getElementById("peName").addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); document.getElementById("peSave").click(); } });
   }
   profileRead();
 
@@ -390,7 +378,7 @@ async function renderPersonFile(p) {
 
   const add = el(`<div class="add-box"><div class="add-grid">
     <label class="fld">Type<select id="nType">
-      <option value="1:1">1:1</option><option value="note">note</option>
+      <option value="note">note</option><option value="1:1">1:1</option>
       <option value="goal">goal</option><option value="expectation">expectation</option>
       <option value="observation">observation</option></select></label>
     <label class="fld">Date<input id="nDate" type="date" value="${today()}"></label>

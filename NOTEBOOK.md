@@ -37,18 +37,22 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
 ### `people`
 - `slug` is the stable handle — lowercase, no spaces (e.g. `jdoe`). Use it to
   look people up; never change it once set.
-- Put durable background in `context` (who they are, history). Put anything
-  **dated** in `person_notes`, not here.
+- **Everything about a person goes in `person_notes` — the row itself is just a
+  name.** The `role`, `relationship`, `org`, and `context` columns still exist
+  but are deliberately empty and no longer appear anywhere in the app. Don't
+  write to them; write a note instead. "Carpenter" or "Alyssa's sister" is a
+  note like any other.
 - Set `active = false` instead of deleting when someone leaves.
-- In the app, tapping a person's name on their file (or the Edit button) swaps
-  the profile to live fields — name, role, relationship, org, background.
+- The people list shows each person's newest note as the subtitle. On their
+  file, tapping the name (or Rename) edits the name — that's the only field.
 
 ### `person_notes`
 - **A person's file** = `select * from person_notes where person_id = (select id
   from people where slug='jdoe') order by note_date desc`.
-- `type` is one of: `1:1`, `expectation`, `goal`, `observation`, `note`.
-  Use `1:1` for the summary of a one-on-one; break out explicit expectations and
-  goals as their own rows so they're easy to revisit.
+- `type` is one of: `note`, `1:1`, `expectation`, `goal`, `observation`.
+  **`note` is the default and the right answer most of the time.** Reach for
+  `1:1` only for the summary of an actual one-on-one, and break out explicit
+  expectations and goals as their own rows so they're easy to revisit.
 - One note per idea — small rows are easier to review than one giant blob.
 - `note_date` = the day it happened (default today).
 - Notes are editable in place: each one has an Edit link that opens its type,
