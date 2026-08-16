@@ -27,6 +27,7 @@ consistent over time. If you (Claude) are reading this, follow it exactly.
 | `tasks` | a checklist / to-do item | migrated from `checklist.json`; `done`, `due`, `job`, `recur` |
 | `recipes` | one recipe | title, description, servings, ordered `instructions[]` |
 | `recipe_ingredients` | one ingredient line on a recipe | `item` + `qty`, ordered by `sort` |
+| `daily_logs` | one freeform entry about a day | what happened, written every day or few days |
 
 Everything is private (Row-Level Security). Anonymous users see nothing.
 
@@ -121,6 +122,30 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
   `select r.title from recipes r join recipe_ingredients i on i.recipe_id = r.id
   where i.item ilike '%cilantro%'`. The Recipes tab's search box does the same
   thing across title and ingredients.
+
+### `daily_logs`
+- A **running record of what actually happened** — one freeform entry per
+  sitting, written every day or every few days. Several entries per date are
+  fine. Read newest-first; entries are editable in place from the Daily Log tab.
+- **Deliberately unstructured.** The whole point is writing it down without
+  deciding where it goes. Don't impose a format, and don't ask Jerry to file
+  things at write time — that's the mining pass's job.
+- `log_date` = the day being written about (default today). `body` is the text.
+- **`mined_at`** = when a mining pass last read this entry; `null` means not yet
+  mined. Set it when you process an entry so the next pass skips it.
+
+#### Mining a daily log (the point of the table)
+Entries are raw material. A later pass reads unmined entries and files what it
+finds into the table where it belongs, then stamps `mined_at`:
+- *"saw a cool thing that'd make a good present for Jonah"* → a `person_notes`
+  row on Jonah, so the idea is on his file when his birthday comes around.
+- *"made turkey chili tonight"* → dinner history, so "what haven't we eaten in a
+  while?" can be answered from `daily_logs` against `recipes`.
+- anything dated (an appointment, a party) → a `calendar_items` row.
+
+Nothing about this is automatic yet — it runs when Jerry asks. The pass should
+**leave the original entry untouched**; it's the source of truth for what was
+written, and the derived rows are what get corrected if the reading was wrong.
 
 ---
 

@@ -220,6 +220,27 @@ create table if not exists recipe_ingredients (
 create index if not exists recipe_ingredients_recipe_idx on recipe_ingredients(recipe_id, sort);
 
 -- =============================================================================
+-- daily_logs  — one freeform entry per sitting: what happened that day
+-- Several entries per date are fine; write as often or as rarely as you like.
+-- These are the raw material a later pass mines for things worth keeping
+-- (a present idea lands in that person's notes, a dinner informs meal planning),
+-- which is what mined_at is for: null = not yet mined.
+-- =============================================================================
+create table if not exists daily_logs (
+  id          uuid primary key default gen_random_uuid(),
+  log_date    date not null default current_date,
+  body        text not null,
+  mined_at    timestamptz,                         -- null = not yet mined
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists daily_logs_date_idx on daily_logs(log_date desc, created_at desc);
+
+drop trigger if exists daily_logs_updated_at on daily_logs;
+create trigger daily_logs_updated_at before update on daily_logs
+  for each row execute function set_updated_at();
+
+-- =============================================================================
 -- Row-Level Security — private by default
 -- =============================================================================
 -- Enable RLS on every table, then allow full access ONLY to:
@@ -231,7 +252,7 @@ create index if not exists recipe_ingredients_recipe_idx on recipe_ingredients(r
 do $$
 declare t text;
 begin
-  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items','tasks','projects','project_notes','recipes','recipe_ingredients']
+  foreach t in array array['people','person_notes','meetings','meeting_entries','calendar_items','tasks','projects','project_notes','recipes','recipe_ingredients','daily_logs']
   loop
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists "authenticated full access" on %I;', t);
