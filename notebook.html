@@ -44,7 +44,7 @@
   header.top h1 { font-size: 22px; margin: 0; }
   .who { color: var(--muted); font-size: 12.5px; }
 
-  .tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
   .tabs button { background: transparent; color: var(--muted); border: none; border-bottom: 2px solid transparent;
     border-radius: 0; padding: 8px 12px; font-weight: 600; }
   .tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
@@ -103,6 +103,10 @@
   .edit-grid input, .edit-grid textarea { width: 100%; }
   @media (max-width: 600px){ .edit-grid { grid-template-columns: 1fr; } }
 
+  /* ---- Daily log ---- */
+  /* Entries are typed as prose, often several lines — keep the line breaks. */
+  .log-body { white-space: pre-wrap; font-size: 13.5px; }
+
   .step .n { flex: none; width: 22px; height: 22px; border-radius: 50%;
     background: var(--panel-2); border: 1px solid var(--line); color: var(--accent);
     font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
@@ -141,6 +145,7 @@
     <button data-tab="meetings">Meetings</button>
     <button data-tab="calendar">Calendar</button>
     <button data-tab="recipes">Recipes</button>
+    <button data-tab="daily">Daily Log</button>
   </div>
 
   <div id="view"></div>
@@ -228,6 +233,7 @@ async function renderTab() {
   if (currentTab === "calendar") return renderCalendar();
   if (currentTab === "tasks") return renderTasks();
   if (currentTab === "recipes") return renderRecipes();
+  if (currentTab === "daily") return renderDailyLogs();
 }
 
 /* ========================= PEOPLE ========================= */
@@ -919,6 +925,104 @@ async function renderRecipe(r) {
     r.instructions = next;   // keep the in-memory copy in step with the row we just wrote
     renderRecipe(r);
   });
+}
+
+/* ========================= DAILY LOG =========================
+   A running record of what actually happened — written every day or every few
+   days, whenever there's something worth keeping. Deliberately unstructured:
+   the value is in writing it without thinking about where it goes. A later pass
+   mines these entries and files what it finds (a present idea onto that
+   person's notes, a dinner into meal planning), which is what mined_at tracks.
+   Several entries per date are fine. */
+async function renderDailyLogs() {
+  const { data: logs, error } = await sb.from("daily_logs")
+    .select("*").order("log_date", { ascending: false }).order("created_at", { ascending: false });
+  if (error) return showErr(error);
+  const v = view(); v.innerHTML = "";
+
+  // Add box up top so jotting today's entry is one tap; the log reads newest-first below.
+  const add = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld">Date<input id="dlDate" type="date" value="${today()}"></label>
+    <div></div>
+    <label class="fld full">What happened<textarea id="dlBody" style="min-height:110px"
+      placeholder="What you did, who you saw, what you cooked, anything worth not losing…"></textarea></label>
+    <div class="full"><button id="dlAdd">Add entry</button></div>
+  </div></div>`);
+  v.appendChild(add);
+  const addEntry = async () => {
+    const body = document.getElementById("dlBody").value.trim();
+    if (!body) return;
+    const { error } = await sb.from("daily_logs").insert({
+      log_date: document.getElementById("dlDate").value || today(), body });
+    if (error) return alert(error.message);
+    renderDailyLogs();
+  };
+  document.getElementById("dlAdd").addEventListener("click", addEntry);
+  // Cmd/Ctrl+Enter saves — plain Enter has to stay a newline in a prose box.
+  document.getElementById("dlBody").addEventListener("keydown", e => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); addEntry(); } });
+
+  const list = el('<div></div>');
+  v.appendChild(list);
+
+  function drawLogs() {
+    // Re-sort in case an edit moved an entry's date.
+    (logs || []).sort((a, b) =>
+      a.log_date !== b.log_date ? (a.log_date < b.log_date ? 1 : -1)
+                                : (a.created_at < b.created_at ? 1 : -1));
+    list.innerHTML = "";
+    (logs || []).forEach(l => list.appendChild(logEl(l)));
+    if (!logs || !logs.length) list.appendChild(el('<div class="empty">No entries yet.</div>'));
+  }
+
+  // Same edit-in-place shape as a person's notes: read view, Edit swaps to fields.
+  function logEl(l) {
+    const wrap = el('<div class="note"></div>');
+    function read() {
+      wrap.innerHTML = "";
+      wrap.appendChild(el(`<div class="head">
+        <span>${esc(l.log_date)}</span>
+        <span style="flex:1"></span>
+        <button class="ghost log-edit">Edit</button>
+      </div>`));
+      wrap.appendChild(el(`<div class="log-body">${esc(l.body)}</div>`));
+      wrap.querySelector(".log-edit").addEventListener("click", edit);
+    }
+    function edit() {
+      wrap.innerHTML = "";
+      wrap.appendChild(el(`<div class="edit-grid">
+        <label class="fld">Date<input class="leDate" type="date" value="${esc(l.log_date)}"></label>
+        <div></div>
+        <label class="fld full">Entry<textarea class="leBody" style="min-height:130px">${esc(l.body)}</textarea></label>
+        <div class="full row">
+          <button class="leSave">Save</button>
+          <button class="leCancel secondary">Cancel</button>
+          <div class="spacer"></div>
+          <button class="leDel ghost" title="Delete">✕</button>
+        </div>
+      </div>`));
+      wrap.querySelector(".leCancel").addEventListener("click", read);
+      wrap.querySelector(".leSave").addEventListener("click", async () => {
+        const body = wrap.querySelector(".leBody").value.trim();
+        if (!body) return;
+        const patch = { body, log_date: wrap.querySelector(".leDate").value || l.log_date };
+        const { error } = await sb.from("daily_logs").update(patch).eq("id", l.id);
+        if (error) return alert(error.message);
+        Object.assign(l, patch);
+        drawLogs();   // redraw the whole log in case the date changed its place
+      });
+      wrap.querySelector(".leDel").addEventListener("click", async () => {
+        if (!confirm("Delete this entry?")) return;
+        const { error } = await sb.from("daily_logs").delete().eq("id", l.id);
+        if (error) return alert(error.message);
+        const i = logs.indexOf(l); if (i > -1) logs.splice(i, 1);
+        drawLogs();
+      });
+    }
+    read();
+    return wrap;
+  }
+  drawLogs();
 }
 
 function showErr(error) {
