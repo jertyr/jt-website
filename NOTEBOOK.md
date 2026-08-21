@@ -62,9 +62,14 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
 ### `projects` + `project_notes`
 - `projects` holds the *definition* (name, optional `status`/`context`). Rarely
   changes. Click into one to read or add its log.
+- **This is where side projects live** — Alpha House, Junior Carpenter Training
+  Program, Client Road Map, Home Care. One list; there is no separate
+  side-projects table, and a new one shouldn't be added.
+- The project's header edits in place (tap the title or Edit): name, status,
+  context. Archive sets `active = false` and keeps the log.
 - `project_notes` is an **intentionally unstructured, chronological log** — one
   freeform entry per update, read newest-first. No `type`, no ceremony; jotting a
-  messy note is the point.
+  messy note is the point. Each entry edits in place (date, body, delete).
 - One note per update beats one giant blob — it keeps the timeline scannable.
 - **Summarize on demand:** ask Claude to summarize a project and it reads across
   all its notes and gives you the current state of play.
@@ -73,9 +78,12 @@ Everything is private (Row-Level Security). Anonymous users see nothing.
 
 ### `meetings` + `meeting_entries`
 - `meetings` holds the *definition* (name, cadence, participants). Rarely changes.
+  New meetings are added from the Meetings tab, and the definition edits in place
+  (tap the title or Edit): name, cadence, day, participants, and what it's for.
+  Archive sets `active = false` and keeps the log.
 - `meeting_entries` is a **stacking, freeform notes log** — each save adds a new
   `note` row (many allowed per day), read newest-first. Same idea as
-  `project_notes`; jot what was covered or decided.
+  `project_notes`; jot what was covered or decided. Each entry edits in place.
 - One note per idea beats one giant blob — it keeps the timeline scannable, and
   you can ask Claude to summarize a meeting's log any time.
 - Look up a meeting by `slug`: `leadership`, `field-crew-am`.
