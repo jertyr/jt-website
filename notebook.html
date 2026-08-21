@@ -225,6 +225,63 @@ function esc(s) { return (s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&
 async function q(table) { return sb.from(table); }
 function today() { return new Date().toISOString().slice(0,10); }
 
+/* One dated freeform entry that edits in place — the shape a project's log and a
+   meeting's log both have. `row` is the loaded object; redraw() repaints the
+   caller's list afterwards (a saved date change can move the entry). */
+function dateLogEntry({ table, dateCol, bodyCol, row, redraw, onDelete }) {
+  const wrap = el('<div class="note"></div>');
+  function read() {
+    wrap.innerHTML = "";
+    wrap.appendChild(el(`<div class="head">
+      <span>${esc(row[dateCol])}</span>
+      <span style="flex:1"></span>
+      <button class="ghost le-edit">Edit</button>
+    </div>`));
+    wrap.appendChild(el(`<div class="log-body">${esc(row[bodyCol])}</div>`));
+    wrap.querySelector(".le-edit").addEventListener("click", edit);
+  }
+  function edit() {
+    wrap.innerHTML = "";
+    wrap.appendChild(el(`<div class="edit-grid">
+      <label class="fld">Date<input class="leDate" type="date" value="${esc(row[dateCol])}"></label>
+      <div></div>
+      <label class="fld full">Note<textarea class="leBody" style="min-height:120px">${esc(row[bodyCol])}</textarea></label>
+      <div class="full row">
+        <button class="leSave">Save</button>
+        <button class="leCancel secondary">Cancel</button>
+        <div class="spacer"></div>
+        <button class="leDel ghost" title="Delete">✕</button>
+      </div>
+    </div>`));
+    wrap.querySelector(".leCancel").addEventListener("click", read);
+    wrap.querySelector(".leSave").addEventListener("click", async () => {
+      const body = wrap.querySelector(".leBody").value.trim();
+      if (!body) return;
+      const patch = { [bodyCol]: body, [dateCol]: wrap.querySelector(".leDate").value || row[dateCol] };
+      const { error } = await sb.from(table).update(patch).eq("id", row.id);
+      if (error) return alert(error.message);
+      Object.assign(row, patch);
+      redraw();
+    });
+    wrap.querySelector(".leDel").addEventListener("click", async () => {
+      if (!confirm("Delete this note?")) return;
+      const { error } = await sb.from(table).delete().eq("id", row.id);
+      if (error) return alert(error.message);
+      onDelete();
+      redraw();
+    });
+  }
+  read();
+  return wrap;
+}
+
+/* Sort a log newest-first: by its date column, then by insertion order within a day. */
+function sortLog(rows, dateCol) {
+  (rows || []).sort((a, b) => a[dateCol] !== b[dateCol]
+    ? (a[dateCol] < b[dateCol] ? 1 : -1)
+    : (a.created_at < b.created_at ? 1 : -1));
+}
+
 async function renderTab() {
   view().innerHTML = '<div class="empty">Loading…</div>';
   if (currentTab === "people") return renderPeople();
@@ -444,9 +501,62 @@ async function renderProjectFile(p) {
   const back = el('<a class="back" href="#">← All projects</a>');
   back.addEventListener("click", e => { e.preventDefault(); renderProjects(); });
   v.appendChild(back);
-  v.appendChild(el(`<div class="card2"><h3>${esc(p.name)}</h3>
-    <div class="sub">${esc(p.status || "")}</div>
-    ${p.context ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(p.context)}</p>` : ""}</div>`));
+
+  /* ---- Header: reads as plain text, swaps to live fields on Edit (or a tap on
+     the title), the same way a person's file works. ---- */
+  const header = el('<div class="card2"></div>');
+  v.appendChild(header);
+
+  function headerRead() {
+    header.innerHTML = "";
+    header.appendChild(el(`<div class="row">
+      <h3 class="edit-head" style="margin:0;flex:1">${esc(p.name)}</h3>
+      <button class="ghost" id="prjEdit">Edit</button>
+    </div>`));
+    if (p.status) header.appendChild(el(`<div class="sub">${esc(p.status)}</div>`));
+    if (p.context) header.appendChild(el(`<p class="log-body" style="margin:10px 0 0">${esc(p.context)}</p>`));
+    header.querySelector("#prjEdit").addEventListener("click", headerEdit);
+    header.querySelector(".edit-head").addEventListener("click", headerEdit);
+  }
+
+  function headerEdit() {
+    header.innerHTML = "";
+    header.appendChild(el(`<div class="edit-grid">
+      <label class="fld full">Project<input id="peName" type="text" value="${esc(p.name)}"></label>
+      <label class="fld">Status<input id="peStatus" type="text" value="${esc(p.status || "")}" placeholder="active"></label>
+      <div></div>
+      <label class="fld full">Context<textarea id="peContext"
+        placeholder="What this is and why it matters…">${esc(p.context || "")}</textarea></label>
+      <div class="full row">
+        <button id="peSave">Save</button>
+        <button id="peCancel" class="secondary">Cancel</button>
+        <div class="spacer"></div>
+        <button id="peArchive" class="ghost">Archive</button>
+      </div>
+    </div>`));
+    header.querySelector("#peCancel").addEventListener("click", headerRead);
+    header.querySelector("#peSave").addEventListener("click", async () => {
+      const name = document.getElementById("peName").value.trim();
+      if (!name) return;
+      const patch = { name,
+        status: document.getElementById("peStatus").value.trim() || null,
+        context: document.getElementById("peContext").value.trim() || null };
+      const { error } = await sb.from("projects").update(patch).eq("id", p.id);
+      if (error) return alert(error.message);
+      Object.assign(p, patch);   // keep the local copy in step with the row we just wrote
+      headerRead();
+    });
+    // Archiving hides the project from the list without destroying its log.
+    header.querySelector("#peArchive").addEventListener("click", async () => {
+      if (!confirm("Archive this project? Its notes are kept.")) return;
+      const { error } = await sb.from("projects").update({ active: false }).eq("id", p.id);
+      if (error) return alert(error.message);
+      renderProjects();
+    });
+    document.getElementById("peName").addEventListener("keydown", e => {
+      if (e.key === "Enter") { e.preventDefault(); document.getElementById("peSave").click(); } });
+  }
+  headerRead();
 
   // Quick add box up top so jotting an entry is one tap; the log reads newest-first below.
   const add = el(`<div class="add-box"><div class="add-grid">
@@ -466,11 +576,18 @@ async function renderProjectFile(p) {
   });
 
   const list = el('<div></div>');
-  (notes || []).forEach(n => list.appendChild(el(`<div class="note">
-    <div class="head"><span>${esc(n.note_date)}</span></div>
-    <div>${esc(n.body)}</div></div>`)));
-  if (!notes || !notes.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
   v.appendChild(list);
+  function drawNotes() {
+    sortLog(notes, "note_date");
+    list.innerHTML = "";
+    (notes || []).forEach(n => list.appendChild(dateLogEntry({
+      table: "project_notes", dateCol: "note_date", bodyCol: "body", row: n,
+      redraw: drawNotes,
+      onDelete: () => { const i = notes.indexOf(n); if (i > -1) notes.splice(i, 1); },
+    })));
+    if (!notes || !notes.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
+  }
+  drawNotes();
 }
 
 /* ========================= MEETINGS ========================= */
@@ -490,6 +607,30 @@ async function renderMeetings() {
     v.appendChild(c);
   });
   if (!meetings || !meetings.length) v.appendChild(el('<div class="empty">No meetings defined.</div>'));
+
+  const addMeeting = el(`<div class="add-box"><div class="add-grid">
+    <label class="fld full">Meeting<input id="mtgName" type="text" placeholder="Leadership Meeting"></label>
+    <label class="fld">Cadence<input id="mtgCadence" type="text" placeholder="Twice weekly"></label>
+    <label class="fld">Day<input id="mtgDay" type="text" placeholder="Thursday"></label>
+    <label class="fld full">Participants<input id="mtgWho" type="text" placeholder="Partners / Field crew"></label>
+    <div class="full"><button id="mtgAdd">Add meeting</button></div>
+  </div></div>`);
+  v.appendChild(addMeeting);
+  const doAddMeeting = async () => {
+    const name = document.getElementById("mtgName").value.trim();
+    if (!name) return;
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const { error } = await sb.from("meetings").insert({
+      slug, name,
+      cadence: document.getElementById("mtgCadence").value.trim() || null,
+      day_of_week: document.getElementById("mtgDay").value.trim() || null,
+      participants: document.getElementById("mtgWho").value.trim() || null });
+    if (error) return alert(error.message);
+    renderMeetings();
+  };
+  document.getElementById("mtgAdd").addEventListener("click", doAddMeeting);
+  addMeeting.querySelectorAll("input").forEach(i =>
+    i.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doAddMeeting(); } }));
 
   // Chronological feed of ALL entries across meetings (most recent first)
   const { data: entries, error: e2 } = await sb.from("meeting_entries")
@@ -516,9 +657,69 @@ async function renderMeeting(m) {
   const back = el('<a class="back" href="#">← All meetings</a>');
   back.addEventListener("click", e => { e.preventDefault(); renderMeetings(); });
   v.appendChild(back);
-  v.appendChild(el(`<div class="card2"><h3>${esc(m.name)}</h3>
-    <div class="sub">${esc(m.cadence || "")}${m.day_of_week ? " · " + esc(m.day_of_week) : ""}${m.participants ? " · " + esc(m.participants) : ""}</div>
-    ${m.notes ? `<p style="font-size:13.5px;margin:10px 0 0">${esc(m.notes)}</p>` : ""}</div>`));
+
+  /* ---- Header: same read/edit swap as a person's file or a project's. ---- */
+  const header = el('<div class="card2"></div>');
+  v.appendChild(header);
+
+  const meetingSub = () =>
+    `${esc(m.cadence || "")}${m.day_of_week ? (m.cadence ? " · " : "") + esc(m.day_of_week) : ""}${m.participants ? ((m.cadence || m.day_of_week) ? " · " : "") + esc(m.participants) : ""}`;
+
+  function headerRead() {
+    header.innerHTML = "";
+    header.appendChild(el(`<div class="row">
+      <h3 class="edit-head" style="margin:0;flex:1">${esc(m.name)}</h3>
+      <button class="ghost" id="mEdit">Edit</button>
+    </div>`));
+    const sub = meetingSub();
+    if (sub) header.appendChild(el(`<div class="sub">${sub}</div>`));
+    if (m.notes) header.appendChild(el(`<p class="log-body" style="margin:10px 0 0">${esc(m.notes)}</p>`));
+    header.querySelector("#mEdit").addEventListener("click", headerEdit);
+    header.querySelector(".edit-head").addEventListener("click", headerEdit);
+  }
+
+  function headerEdit() {
+    header.innerHTML = "";
+    header.appendChild(el(`<div class="edit-grid">
+      <label class="fld full">Meeting<input id="meName" type="text" value="${esc(m.name)}"></label>
+      <label class="fld">Cadence<input id="meCadence" type="text" value="${esc(m.cadence || "")}" placeholder="Twice weekly"></label>
+      <label class="fld">Day<input id="meDay" type="text" value="${esc(m.day_of_week || "")}" placeholder="Thursday"></label>
+      <label class="fld full">Participants<input id="meWho" type="text" value="${esc(m.participants || "")}" placeholder="Partners"></label>
+      <label class="fld full">About<textarea id="meNotes"
+        placeholder="What this meeting is for…">${esc(m.notes || "")}</textarea></label>
+      <div class="full row">
+        <button id="meSave">Save</button>
+        <button id="meCancel" class="secondary">Cancel</button>
+        <div class="spacer"></div>
+        <button id="meArchive" class="ghost">Archive</button>
+      </div>
+    </div>`));
+    header.querySelector("#meCancel").addEventListener("click", headerRead);
+    header.querySelector("#meSave").addEventListener("click", async () => {
+      const name = document.getElementById("meName").value.trim();
+      if (!name) return;
+      const patch = { name,
+        cadence: document.getElementById("meCadence").value.trim() || null,
+        day_of_week: document.getElementById("meDay").value.trim() || null,
+        participants: document.getElementById("meWho").value.trim() || null,
+        notes: document.getElementById("meNotes").value.trim() || null };
+      const { error } = await sb.from("meetings").update(patch).eq("id", m.id);
+      if (error) return alert(error.message);
+      Object.assign(m, patch);   // keep the local copy in step with the row we just wrote
+      headerRead();
+    });
+    // Archiving hides the meeting from the list without destroying its log.
+    header.querySelector("#meArchive").addEventListener("click", async () => {
+      if (!confirm("Archive this meeting? Its notes are kept.")) return;
+      const { error } = await sb.from("meetings").update({ active: false }).eq("id", m.id);
+      if (error) return alert(error.message);
+      renderMeetings();
+    });
+    header.querySelectorAll("input").forEach(i =>
+      i.addEventListener("keydown", e => {
+        if (e.key === "Enter") { e.preventDefault(); document.getElementById("meSave").click(); } }));
+  }
+  headerRead();
 
   // Quick add box up top; each save adds a new note. The log reads newest-first below.
   const add = el(`<div class="add-box"><div class="add-grid">
@@ -538,11 +739,18 @@ async function renderMeeting(m) {
   });
 
   const list = el('<div></div>');
-  (entries || []).forEach(en => list.appendChild(el(`<div class="note">
-    <div class="head"><span>${esc(en.entry_date)}</span></div>
-    <div>${esc(en.note)}</div></div>`)));
-  if (!entries || !entries.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
   v.appendChild(list);
+  function drawEntries() {
+    sortLog(entries, "entry_date");
+    list.innerHTML = "";
+    (entries || []).forEach(en => list.appendChild(dateLogEntry({
+      table: "meeting_entries", dateCol: "entry_date", bodyCol: "note", row: en,
+      redraw: drawEntries,
+      onDelete: () => { const i = entries.indexOf(en); if (i > -1) entries.splice(i, 1); },
+    })));
+    if (!entries || !entries.length) list.appendChild(el('<div class="empty">No notes yet.</div>'));
+  }
+  drawEntries();
 }
 
 /* ========================= CALENDAR ========================= */
